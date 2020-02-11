@@ -50,11 +50,9 @@ static const vector<int> publicPailib
 	201,202,203,204,205,206,207,208,209,210
 };
 
-static const vector<int> publicPailib2
+static const vector<int> AllPaiValue
 {
 	101,102,103,104,105,106,107,108,109,110,
-	101,102,103,104,105,106,107,108,109,110,
-	201,202,203,204,205,206,207,208,209,210,
 	201,202,203,204,205,206,207,208,209,210
 };
 // 101 101 102 102 103 103 104 104 105 105 106 106 107 107 108 108 109 109 110 110
@@ -89,6 +87,14 @@ int getCountAndDelByhand(vector<int>& handpokers, const int& paiVal)
 	return res;
 }
 
+void Setres_ting_hu(map<int, int>& ting_hu, const int& ting, const int& huxi)
+{
+	if (huxi > ting_hu[ting])
+	{
+		ting_hu[ting] = huxi;
+	}
+}
+
 
 vector<vector<int>> combination(const vector<int>& pSum, size_t nCombiLen, bool(*call_back)(const vector<int>&))
 {
@@ -101,7 +107,6 @@ vector<vector<int>> combination(const vector<int>& pSum, size_t nCombiLen, bool(
 	nCombiLen = nCombiLen > nSumLen ? nSumLen : nCombiLen;
 	vector<int> nSumIndex(nCombiLen + 1, 0);
 	vector<int> nSumCount(nCombiLen);
-	vector<int> nSumVec(nCombiLen);
 	unordered_map<string, int> key_value;
 	vector<vector<int>> res;
 	for (int i = 0; i < nCombiLen + 1; i++)  // 0 1 2 3 4 ...nCombiLen
@@ -118,12 +123,11 @@ vector<vector<int>> combination(const vector<int>& pSum, size_t nCombiLen, bool(
 			string key = "";
 			for (int i = 1; i < nCombiLen + 1; i++)
 			{
-				nSumCount[i - 1] = nSumIndex[i];
-				nSumVec[i - 1] = pSum[nSumIndex[i]];
+				nSumCount[i - 1] = pSum[nSumIndex[i]];
 				key += to_string(pSum[nSumIndex[i]]);
 			}
 
-			if (call_back(nSumVec))
+			if (call_back(nSumCount))
 			{
 				if (!key_value.count(key))
 				{
@@ -166,7 +170,7 @@ vector<vector<int>> combination(const vector<int>& pSum, size_t nCombiLen, bool(
 	return res;
 }
 
-int combination2(const vector<vector<int>>& pSum, size_t nCombiLen, vector<vector<vector<int>>>& res)
+int combination2(const unordered_map<int, int>& pai_Count,const vector<vector<int>>& pSum, size_t nCombiLen, vector<vector<vector<int>>>& res)
 {
 	size_t nSumLen = pSum.size();
 	nCombiLen = nCombiLen > nSumLen ? nSumLen : nCombiLen;
@@ -190,12 +194,12 @@ int combination2(const vector<vector<int>>& pSum, size_t nCombiLen, vector<vecto
 				nSumCount[i - 1] = pSum[nSumIndex[i]];
 				for (const auto& it : pSum[nSumIndex[i]])
 				{
-					if (key_value.count(it))
+					key_value[it]++;
+					if (key_value[it] > pai_Count.at(it))
 					{
 						isVaild = false;
 						break;
 					}
-					key_value[it] = 1;
 				}
 
 				if (isVaild == false)
@@ -444,22 +448,32 @@ bool isVaildCombi(const vector<int>& combi)
 
 vector<int> getMenzi(const vector<vector<int>>& combis,const vector<int>& handpokers)
 {
-	unordered_map<int, int> key_value;
-	for (int i = 0; i < combis.size(); i++)
+	unordered_map<int, vector<int>> pai_Index;
+	for (int i = 0; i < handpokers.size(); i++)
 	{
-		for (int j = 0; j < combis[i].size(); j++)
+		pai_Index[handpokers[i]].push_back(i);
+	}
+
+
+	for (const auto& com : combis)
+	{
+		for (const auto& pai : com)
 		{
-			key_value[combis[i][j]] = 1;
+			pai_Index[pai].pop_back();
+		}
+	}
+	vector<int> res;
+	for (const auto& it : pai_Index)
+	{
+		if (!it.second.empty())
+		{
+			for (const auto& index : it.second)
+			{
+				res.emplace_back(handpokers[index]);
+			}
 		}
 	}
 
-	vector<int> res;
-
-	for (int i = 0; i < handpokers.size(); i++)
-	{
-		if (!key_value.count(i))
-			res.emplace_back(handpokers[i]);
-	}
 	return res;
 }
 
@@ -468,31 +482,51 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 {
 	// 102 102 104 104 106 107 110 201 202 202 204 207 555
 	size_t comsize = (handpokers.size() + kindNum) / 3 - 1 ;
+	int tempNum = 1;
 	if ((handpokers.size() + kindNum) % 3 == 2)
 	{
+		tempNum = 0;
 		++comsize;
 	}
 	comsize -= kindNum;
+	
 	vector<vector<vector<int>>> res;
 	vector<vector<int>> vaildcombis;
+	vector<vector<int>> paiIndexList;
 	vaildcombis = combination(handpokers, 3, isVaildCombi);
 	vector<vector<vector<int>>> tempcombss;
-	if (vaildcombis.size() >= comsize)
+	/*cout << endl;
+	for (const auto& com : vaildcombis)
 	{
-		for (int i = comsize; i <= comsize + kindNum; i++)
+		for (const auto& pai : com)
 		{
-			combination2(vaildcombis, i, tempcombss);
+			cout << pai << " ";
+		}
+		cout << endl;
+	}*/
+
+	size_t tempComSize = comsize + kindNum + tempNum;
+
+	unordered_map<int, int> pai_Count;
+
+	for (const auto& pai : handpokers)
+	{
+		pai_Count[pai]++;
+	}
+
+	for (size_t i = comsize; i <= tempComSize; i++)
+	{
+		if (vaildcombis.size() >= i)
+		{
+			combination2(pai_Count,vaildcombis, i, tempcombss);
 		}
 	}
 
 	for (int i = 0; i < tempcombss.size(); i++)
 	{
 		vector<int> tempMenzi = getMenzi(tempcombss[i], handpokers);
-		if (!tempMenzi.empty())
-		{
-			tempcombss[i].emplace_back(tempMenzi);
-			res.emplace_back(tempcombss[i]);
-		}
+		tempcombss[i].emplace_back(tempMenzi);
+		res.emplace_back(tempcombss[i]);
 	}
 	return res;
 }
@@ -552,16 +586,19 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 			{
 				if (type[firstIndex] == 1)
 				{
-					resChu_ting[combi[firstIndex] - 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
+					Setres_ting_hu(resChu_ting, combi[firstIndex] - 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan));
+					//resChu_ting[combi[firstIndex] - 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
 				}
 				else
 				{
-					resChu_ting[combi[firstIndex] - 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
+					Setres_ting_hu(resChu_ting, combi[firstIndex] - 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan));
+					//resChu_ting[combi[firstIndex] - 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
 				}
 			}
 			else
 			{
-				resChu_ting[combi[firstIndex] - 1] = pubicHuxi;
+				Setres_ting_hu(resChu_ting, combi[firstIndex] - 1, pubicHuxi);
+				//resChu_ting[combi[firstIndex] - 1] = pubicHuxi;
 			}
 		}
 
@@ -571,16 +608,19 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 			{
 				if (type[scondIndex] == 1)
 				{
-					resChu_ting[combi[scondIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan));
+					//resChu_ting[combi[scondIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
 				}
 				else
 				{
-					resChu_ting[combi[scondIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan));
+					//resChu_ting[combi[scondIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
 				}
 			}
 			else
 			{
-				resChu_ting[combi[scondIndex] + 1] = pubicHuxi;
+				Setres_ting_hu(resChu_ting, combi[scondIndex] + 1, pubicHuxi);
+				//resChu_ting[combi[scondIndex] + 1] = pubicHuxi;
 			}
 		}
 
@@ -591,28 +631,35 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 		{
 			if (type[firstIndex] == 1)
 			{
-				resChu_ting[combi[firstIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
+				Setres_ting_hu(resChu_ting, combi[firstIndex] + 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan));
+				//resChu_ting[combi[firstIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_yiersan);
 			}
 			else
 			{
-				resChu_ting[combi[firstIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
+				Setres_ting_hu(resChu_ting, combi[firstIndex] + 1, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan));
+				//resChu_ting[combi[firstIndex] + 1] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_yiersan);
 			}
 		}
 		else
 		{
-			resChu_ting[combi[firstIndex] + 1] = pubicHuxi;
+			Setres_ting_hu(resChu_ting, combi[firstIndex] + 1, pubicHuxi);
+			//resChu_ting[combi[firstIndex] + 1] = pubicHuxi;
 		}
 	}
 	else if (value[firstIndex] == value[scondIndex])
 	{
-		resChu_ting[value[firstIndex] + 100] = pubicHuxi;
-		resChu_ting[value[firstIndex] + 200] = pubicHuxi;
+		Setres_ting_hu(resChu_ting, value[firstIndex] + 100, pubicHuxi);
+		Setres_ting_hu(resChu_ting, value[firstIndex] + 200, pubicHuxi);
+		//resChu_ting[value[firstIndex] + 100] = pubicHuxi;
+		//resChu_ting[value[firstIndex] + 200] = pubicHuxi;
 
 		if (type[firstIndex] == type[scondIndex] && type[scondIndex] == 1)
-			resChu_ting[value[firstIndex] + 100] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao);      //有可能会笑 
+			Setres_ting_hu(resChu_ting, value[firstIndex] + 100, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao));
+			//resChu_ting[value[firstIndex] + 100] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao);      //有可能会笑 
 
 		if (type[firstIndex] == type[scondIndex] && type[scondIndex] == 2)
-			resChu_ting[value[firstIndex] + 200] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao);      //有可能会笑 
+			Setres_ting_hu(resChu_ting, value[firstIndex] + 100, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao));
+			//resChu_ting[value[firstIndex] + 200] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao);      //有可能会笑 
 	}
 	else
 	{
@@ -622,33 +669,39 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 			{
 				if (type[firstIndex] == 1)
 				{
-					resChu_ting[combi[scondIndex] + 3] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 3, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi));
+					//resChu_ting[combi[scondIndex] + 3] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
 				}
 				else
 				{
-					resChu_ting[combi[scondIndex] + 3] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 3, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi));
+					//resChu_ting[combi[scondIndex] + 3] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
 				}
 			}
 			else if (value[firstIndex] == 2 && value[scondIndex] == 10)
 			{
 				if (type[firstIndex] == 1)
 				{
-					resChu_ting[combi[firstIndex] + 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 5, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi));
+					//resChu_ting[combi[firstIndex] + 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
 				}
 				else
 				{
-					resChu_ting[combi[firstIndex] + 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] + 5, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi));
+					//resChu_ting[combi[firstIndex] + 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
 				}
 			}
 			else if (value[firstIndex] == 7 && value[scondIndex] == 10)
 			{
 				if (type[firstIndex] == 1)
 				{
-					resChu_ting[combi[firstIndex] - 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] - 5, pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi));
+					//resChu_ting[combi[firstIndex] - 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_erqishi);
 				}
 				else
 				{
-					resChu_ting[combi[firstIndex] - 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
+					Setres_ting_hu(resChu_ting, combi[scondIndex] - 5, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi));
+					//resChu_ting[combi[firstIndex] - 5] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_erqishi);
 				}
 			}
 		}
@@ -682,7 +735,7 @@ void getchuTingPairByFour(vector<int> combi, map<int, int> &resChu_ting, const i
 {
 	if (combi.size() != 4)
 	{
-		printf("getchuTingPairByThree err\n");
+		printf("getchuTingPairByFour err   combi: %zd \n", combi.size());
 		return;
 	}
 	size_t comSize = combi.size();
@@ -741,6 +794,7 @@ void getchuTingPairByFour(vector<int> combi, map<int, int> &resChu_ting, const i
 				}
 			}
 			firstIndex = indexValue[i][3];
+			Setres_ting_hu(resChu_ting, combi[firstIndex], pubicHuxi + tempHufen);
 			resChu_ting[combi[firstIndex]] = pubicHuxi + tempHufen;
 		}
 	}
@@ -750,6 +804,7 @@ vector<int> getmarkTempl(const vector<int>& handPokers)
 {
 	unordered_map<int, int> markTempl;
 	unordered_map<int, int> pai_count;
+
 	if (handPokers.size() == 1)
 	{
 		markTempl[handPokers[0]] = 1;
@@ -912,6 +967,216 @@ vector<int> getmarkTempl(const vector<int>& handPokers)
 	return possibilityHus;
 }
 
+void DOneKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int & tempHuxi)
+{
+	for (auto& paiValue : AllPaiValue)
+	{
+		Setres_ting_hu(res_ting_hu, paiValue, tempHuxi);
+	}
+}
+
+void DTwoKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int & tempHuxi)
+{
+	//王 王  一 一 一 二 三 四   五 六  王是3个，到这里手牌数肯定是模除3余2
+	map<int, int> tempChuTing;
+	vector<int> type(2, 0);
+	vector<int> value(2, 0);
+	for (int i = 0; i < handpokers.size(); i++)
+	{
+		type[i] = getPaiType(handpokers[i]);
+		value[i] = getPaiValue(handpokers[i]);
+	}
+	setChuTingCard(handpokers, tempChuTing, value, type, 0, 1, tempHuxi);
+	if (tempChuTing.size() != 0)
+	{
+		//一个赖子可以解决一对
+		for (auto& paiValue : AllPaiValue)
+		{
+			Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempChuTing[paiValue]);
+		}
+	}
+	else
+	{
+		vector<int> temComs1(2, handpokers[0]);
+		vector<int> temComs2(2, handpokers[1]);
+		vector<int> type1(2, getPaiType(handpokers[0]));
+		vector<int> value1(2, getPaiValue(handpokers[0]));
+		vector<int> type2(2, getPaiType(handpokers[1]));
+		vector<int> value2(2, getPaiValue(handpokers[1]));
+		setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempHuxi);
+		setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempHuxi);
+	}
+}
+
+void DThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu,const int & tempHuxi)
+{
+	//王 王 王 一 一 一 二 三 四 五  王是3个，到这里手牌数肯定是模除3余1
+	size_t handSize = handpokers.size();
+	vector<int> tempTypeHuxi = { paixingHuxi.at(PaiXinHuxi::x_xiao),paixingHuxi.at(PaiXinHuxi::d_xiao) };
+	int type = 0;
+	switch (handSize)
+	{
+	case 1:
+	{
+		for (auto& paiValue : AllPaiValue)
+		{
+			type = getPaiType(paiValue);
+			Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type - 1]);
+		}
+		break;
+	}
+	case 4:
+	{
+		if (res_ting_hu.size() == 20) break;
+
+		const static vector<vector<int>> indexValue   //三张组合 打出一张单挑情况
+		{
+			{0,1,2,3},
+			{0,2,1,3},
+			{0,3,1,2}
+		};
+		vector<int> type(4, 0);
+		vector<int> value(4, 0);
+		
+		for (int i = 0; i < handpokers.size(); i++)
+		{
+			type[i] = getPaiType(handpokers[i]);
+			value[i] = getPaiValue(handpokers[i]);
+		}
+
+		for (const auto &comb : indexValue)
+		{
+			map<int, int> tempChuTing1;
+			map<int, int> tempChuTing2;
+			setChuTingCard(handpokers, tempChuTing1, value, type, comb[0], comb[1], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing2, value, type, comb[2], comb[3], tempHuxi);
+			size_t size1 = tempChuTing1.size();
+			size_t size2 = tempChuTing2.size();
+
+			if (size1 && size2)      //能解决2对
+			{
+				for (auto& paiValue : AllPaiValue)
+				{
+					Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempChuTing1[paiValue] + tempChuTing2[paiValue]);
+				}
+				break;
+			}
+		
+			if (size1)
+			{
+				vector<int> temComs1(2, handpokers[comb[2]]);
+				vector<int> temComs2(2, handpokers[comb[3]]);
+				vector<int> type1(2, getPaiType(handpokers[comb[2]]));
+				vector<int> value1(2, getPaiValue(handpokers[comb[2]]));
+				vector<int> type2(2, getPaiType(handpokers[comb[3]]));
+				vector<int> value2(2, getPaiValue(handpokers[comb[3]]));
+				setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempHuxi);
+				setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempHuxi);
+			}
+			else if (size2)
+			{
+				vector<int> temComs1(2, handpokers[comb[0]]);
+				vector<int> temComs2(2, handpokers[comb[1]]);
+				vector<int> type1(2, getPaiType(handpokers[comb[0]]));
+				vector<int> value1(2, getPaiValue(handpokers[comb[0]]));
+				vector<int> type2(2, getPaiType(handpokers[comb[1]]));
+				vector<int> value2(2, getPaiValue(handpokers[comb[1]]));
+				setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempHuxi);
+				setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempHuxi);
+			}
+		}
+
+		break;
+	}
+	//7张不会到这来
+	default:
+		cout << "DThreeKindPaiTingResErr: handSize = " << handSize << endl;
+		break;
+	}
+}
+
+void DFourKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int & tempHuxi)
+{
+	//王 王 王 王 一 一 一 二 三 四  王是3个，到这里手牌数肯定是模除3余0
+	size_t handSize = handpokers.size();
+	switch (handSize)
+	{
+	case 0:
+	{
+		DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao));
+		break;
+	}
+	case 3:
+	{
+		break;
+	}
+	case 6:
+	{
+		break;
+	}
+	default:
+		cout << "DFourKindPaiTingRes: handSize = " << handSize << endl;
+		break;
+	}
+}
+
+void getKindPai_ting_hu(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int& kindNum,const int& tempHuxi)
+{
+	size_t handSize = handpokers.size() + kindNum;
+	if (handSize % 3 == 1)     //单钓
+	{
+		switch (kindNum)
+		{
+		case 1:
+		{
+			DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi);
+			break;
+		}
+		case 2:
+		{
+			DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi);
+			break;
+		}
+		case 3:
+		{
+			DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi);
+			break;
+		}
+		case 4:
+		{
+			DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	else
+	{
+		switch (kindNum)
+		{
+		case 1:
+		{
+			break;
+		}
+		case 2:
+		{
+			break;
+		}
+		case 3:
+		{
+			break;
+		}
+		case 4:
+		{
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
+
 int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 {
 	sort(handPokers.begin(), handPokers.end());
@@ -942,46 +1207,54 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 		{
 			for (int j = 0; j < res[i].size(); j++)
 			{
+				cout << "[";
 				for (int k = 0; k < res[i][j].size(); k++)
 				{
 					cout << res[i][j][k] << " ";
 				}
+				cout << "]";
 			}
 			cout << endl;
 		}
 		cout << "getAllCardCombi————————————————————————————————————————————————" << endl;*/
 	}
 	vector<int> markTempl;
-	
+	int tempHufen = 0;
 	if (kindNum > 0)
 	{
-		int count = 0;
 		for (int i = 0; i < res.size(); i++)	
 		{
-			markTempl = getmarkTempl(res[i].back());
-			if (markTempl.size() < kindNum) continue;
-			vector<vector<int>> kindCombis = combination3(markTempl, kindNum);
-			for (int k = 0; k < kindNum; k++)
+			if (res[i].back().size() < kindNum * 2)                                      
 			{
-				res[i].back().emplace_back();
+				tempHufen = GetvalidCombiHufen(res[i]) + xiaoQingHuxi;
+				sort(res[i].back().begin(), res[i].back().end());
+				getKindPai_ting_hu(res[i].back(),res_ting_hu, kindNum, tempHufen);
 			}
-			int handSize = res[i].back().size() - 1;
-			for (int j = 0; j < kindCombis.size(); j++)
+			else
 			{
-			
-				int kindSize = kindCombis[j].size();
-				for (int Q = 0; Q < kindSize; Q++)
+				markTempl = getmarkTempl(res[i].back());
+				if (markTempl.size() < kindNum) continue;
+				vector<vector<int>> kindCombis = combination3(markTempl, kindNum);
+				for (int k = 0; k < kindNum; k++)
 				{
-					res[i].back()[handSize - Q] = kindCombis[j][Q];
+					res[i].back().emplace_back();
 				}
-				getTingPai(res[i].back(), res_ting_hu, huxi);
-				count++;
+				size_t handSize = res[i].back().size() - 1;
+				for (int j = 0; j < kindCombis.size(); j++)
+				{
+
+					size_t kindSize = kindCombis[j].size();
+					for (int Q = 0; Q < kindSize; Q++)
+					{
+						res[i].back()[handSize - Q] = kindCombis[j][Q];
+					}
+					getTingPai(res[i].back(), res_ting_hu, xiaoQingHuxi);
+				}
 			}
 		}
 	}
 	else
-	{
-		int tempHufen = 0;
+	{	
 		for (int i = 0; i < res.size(); i++)
 		{
 			tempHufen = GetvalidCombiHufen(res[i]) + xiaoQingHuxi;
@@ -1006,8 +1279,10 @@ void test()
 	//handPokers.emplace_back(kindpai);
 	//handPokers.emplace_back(kindpai);
 	//handPokers.emplace_back(kindpai);
-	vector<int> handPokers = { 101,101,101,104,105,106,107,108,109,110 };
+	vector<int> handPokers = { 104,204,204,107,107,110,110,108,108,208,103,104,105,206,207 ,208,101,201};//,206 };
 	handPokers.emplace_back(kindpai);
+	handPokers.emplace_back(kindpai);
+	//handPokers.emplace_back(kindpai);
 	//vector<int> handPokers = { 104,105,106,104,105,106,108,108,208,110,110,210,205,206,207,206,207,208 ,101,102,203};
 	map<int, int> res;
 	int huxi = 0;
@@ -1021,7 +1296,7 @@ void test()
 
 int main()         //算听啥
 {
-	srand(time(unsigned(NULL)));
+	srand((unsigned int)time(unsigned(NULL)));
 	while (getchar())
 	{
 		auto start = std::chrono::system_clock::now();
