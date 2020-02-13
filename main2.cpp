@@ -481,15 +481,16 @@ vector<int> getMenzi(const vector<vector<int>>& combis,const vector<int>& handpo
 vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const int &kindNum)
 {
 	// 102 102 104 104 106 107 110 201 202 202 204 207 555
-	size_t comsize = (handpokers.size() + kindNum) / 3 - 1 ;
+	int comsize = static_cast<int>(handpokers.size() + kindNum) / 3 - 1 ;
 	int tempNum = 1;
 	if ((handpokers.size() + kindNum) % 3 == 2)
 	{
 		tempNum = 0;
 		++comsize;
 	}
+
 	comsize -= kindNum;
-	
+
 	vector<vector<vector<int>>> res;
 	vector<vector<int>> vaildcombis;
 	vector<vector<int>> paiIndexList;
@@ -505,7 +506,7 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 		cout << endl;
 	}*/
 
-	size_t tempComSize = comsize + kindNum + tempNum;
+	int tempComSize = comsize + kindNum + tempNum;
 
 	unordered_map<int, int> pai_Count;
 
@@ -514,9 +515,9 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 		pai_Count[pai]++;
 	}
 
-	for (size_t i = comsize; i <= tempComSize; i++)
+	for (int i = comsize; i <= tempComSize; i++)
 	{
-		if (vaildcombis.size() >= i)
+		if (i > 0 && vaildcombis.size() >= i)
 		{
 			combination2(pai_Count,vaildcombis, i, tempcombss);
 		}
@@ -527,6 +528,11 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 		vector<int> tempMenzi = getMenzi(tempcombss[i], handpokers);
 		tempcombss[i].emplace_back(tempMenzi);
 		res.emplace_back(tempcombss[i]);
+	}
+	if ((kindNum * 2) + 2 >= handpokers.size())
+	{
+		vector<vector<int>> tempHandPokers(1, handpokers);
+		res.emplace_back(tempHandPokers);
 	}
 	return res;
 }
@@ -710,11 +716,6 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 
 void getchuTingPairByTwo(vector<int> combi, map<int, int> &resChu_ting, const int& pubicHuxi)    //combi传人 3张牌   获取打出哪张 听什么牌
 {
-	if (combi.size() != 2)
-	{
-		printf("getchuTingPairByThree err\n");
-		return;
-	}
 	//下标0 为打出牌  后面为听的牌
 	size_t comSize = combi.size();
 	vector<int> type(comSize, 0);
@@ -733,11 +734,6 @@ void getchuTingPairByTwo(vector<int> combi, map<int, int> &resChu_ting, const in
 
 void getchuTingPairByFour(vector<int> combi, map<int, int> &resChu_ting, const int& pubicHuxi)    //combi传人 3张牌   获取打出哪张 听什么牌
 {
-	if (combi.size() != 4)
-	{
-		printf("getchuTingPairByFour err   combi: %zd \n", combi.size());
-		return;
-	}
 	size_t comSize = combi.size();
 	vector<int> type(comSize, 0);
 	vector<int> value(comSize, 0);
@@ -1029,7 +1025,7 @@ void DThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting
 	{
 		if (res_ting_hu.size() == 20) break;
 
-		const static vector<vector<int>> indexValue   //三张组合 打出一张单挑情况
+		const vector<vector<int>> indexValue   //三张组合 打出一张单挑情况
 		{
 			{0,1,2,3},
 			{0,2,1,3},
@@ -1098,6 +1094,7 @@ void DThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting
 void DFourKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int & tempHuxi)
 {
 	//王 王 王 王 一 一 一 二 三 四  王是3个，到这里手牌数肯定是模除3余0
+	vector<int> tempTypeHuxi = { paixingHuxi.at(PaiXinHuxi::x_xiao),paixingHuxi.at(PaiXinHuxi::d_xiao) };
 	size_t handSize = handpokers.size();
 	switch (handSize)
 	{
@@ -1108,10 +1105,147 @@ void DFourKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_
 	}
 	case 3:
 	{
+		const vector<vector<int>> indexValue   //三张组合 打出一张单挑情况
+		{
+			{0,1,2},
+			{0,2,1},
+			{1,2,0}
+		};
+
+		vector<int> type(3, 0);
+		vector<int> value(3, 0);
+
+		for (int i = 0; i < handpokers.size(); i++)
+		{
+			type[i] = getPaiType(handpokers[i]);
+			value[i] = getPaiValue(handpokers[i]);
+		}
+
+		for (const auto &comb : indexValue)
+		{
+			map<int, int> tempChuTing;
+			setChuTingCard(handpokers, tempChuTing, value, type, comb[0], comb[1], tempHuxi);
+			if (tempChuTing.size() != 0)
+			{
+				for (auto& paiValue : AllPaiValue)
+				{
+					Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempChuTing[paiValue] + tempTypeHuxi[type[comb[2]] - 1]);
+				}
+			}
+			
+			Setres_ting_hu(res_ting_hu, handpokers[comb[2]], tempHuxi + tempTypeHuxi[type[comb[0]] - 1] + tempTypeHuxi[type[comb[1]] - 1]);
+		}
+
 		break;
 	}
 	case 6:
 	{
+		if (res_ting_hu.size() == 20) break;
+
+		const vector<vector<int>> indexValue   
+		{
+			{0,1,2,3,4,5},
+			{0,2,1,3,4,5},
+			{0,3,1,2,4,5},
+			{0,4,1,2,3,5},
+			{0,5,1,2,3,4},
+			{1,2,0,3,4,5},
+			{1,3,0,4,2,5},
+			{1,4,0,5,2,3},
+			{1,5,0,2,3,4}
+		};
+		vector<int> type(6, 0);
+		vector<int> value(6, 0);
+
+		for (int i = 0; i < handpokers.size(); i++)
+		{
+			type[i] = getPaiType(handpokers[i]);
+			value[i] = getPaiValue(handpokers[i]);
+		}
+
+		for (const auto &comb : indexValue)
+		{
+			map<int, int> tempChuTing1;
+			map<int, int> tempChuTing2;
+			map<int, int> tempChuTing3;
+			setChuTingCard(handpokers, tempChuTing1, value, type, comb[0], comb[1], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing2, value, type, comb[2], comb[3], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing3, value, type, comb[4], comb[5], tempHuxi);
+			vector<int> tempVecHuxi(3, tempHuxi);
+
+			for (const auto& it1 : tempChuTing1)
+			{
+				max(tempVecHuxi[0], it1.second);
+			}
+
+			for (const auto& it2 : tempChuTing2)
+			{
+				max(tempVecHuxi[1], it2.second);
+			}
+
+			for (const auto& it3 : tempChuTing3)
+			{
+				max(tempVecHuxi[2], it3.second);
+			}
+
+			int count = 0;
+			size_t size1 = tempChuTing1.size();
+			if (size1)
+				count = count + 1;
+			size_t size2 = tempChuTing2.size();
+			if (size2)
+				count = count + 1;
+			size_t size3 = tempChuTing2.size();
+			if (size3)
+				count = count + 1;
+
+			if (count == 3)      //能解决3对
+			{
+				for (auto& paiValue : AllPaiValue)
+				{
+					Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempChuTing1[paiValue] + tempChuTing2[paiValue] + tempChuTing3[paiValue]);
+				}
+				break;
+			}
+			else if (count == 2)
+			{
+				if (!size1)
+				{
+					vector<int> temComs1(2, handpokers[comb[0]]);
+					vector<int> temComs2(2, handpokers[comb[1]]);
+					vector<int> type1(2, getPaiType(handpokers[comb[0]]));
+					vector<int> value1(2, getPaiValue(handpokers[comb[0]]));
+					vector<int> type2(2, getPaiType(handpokers[comb[1]]));
+					vector<int> value2(2, getPaiValue(handpokers[comb[1]]));
+					setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempVecHuxi[0]);
+					setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempVecHuxi[0]);
+				}
+				else if (!size2)
+				{
+					vector<int> temComs1(2, handpokers[comb[2]]);
+					vector<int> temComs2(2, handpokers[comb[3]]);
+					vector<int> type1(2, getPaiType(handpokers[comb[2]]));
+					vector<int> value1(2, getPaiValue(handpokers[comb[2]]));
+					vector<int> type2(2, getPaiType(handpokers[comb[3]]));
+					vector<int> value2(2, getPaiValue(handpokers[comb[3]]));
+					setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempVecHuxi[1]);
+					setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempVecHuxi[1]);
+				}
+				else
+				{
+					vector<int> temComs1(2, handpokers[comb[4]]);
+					vector<int> temComs2(2, handpokers[comb[5]]);
+					vector<int> type1(2, getPaiType(handpokers[comb[4]]));
+					vector<int> value1(2, getPaiValue(handpokers[comb[4]]));
+					vector<int> type2(2, getPaiType(handpokers[comb[5]]));
+					vector<int> value2(2, getPaiValue(handpokers[comb[5]]));
+					setChuTingCard(temComs1, res_ting_hu, value1, type1, 0, 1, tempVecHuxi[2]);
+					setChuTingCard(temComs2, res_ting_hu, value2, type2, 0, 1, tempVecHuxi[2]);
+				}
+			}
+
+			
+		}
 		break;
 	}
 	default:
@@ -1191,8 +1325,8 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 	//}
 
 	sort(handPokers.begin(), handPokers.end());
-	cout << "sortHandPoker" << endl;
-	printfvector(handPokers);
+	//cout << "sortHandPoker" << endl;
+	//printfvector(handPokers);
 	vector<vector<vector<int>>> res;
 	if (handPokers.size() < 3)
 	{
@@ -1230,7 +1364,7 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 				sort(res[i].back().begin(), res[i].back().end());
 				getKindPai_ting_hu(res[i].back(),res_ting_hu, kindNum, tempHufen);
 			}
-			else
+			else if (res[i].back().size() <= kindNum * 2 + 2)
 			{
 				markTempl = getmarkTempl(res[i].back());
 				if (markTempl.size() < kindNum) continue;
@@ -1262,7 +1396,7 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 			{
 				getchuTingPairByTwo(res[i].back(), res_ting_hu, tempHufen);
 			}
-			else
+			else if (res[i].back().size() == 4)
 			{
 				getchuTingPairByFour(res[i].back(), res_ting_hu, tempHufen);
 			}
@@ -1274,20 +1408,23 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,int& huxi)
 
 void test()
 {
-	//vector<int> handPokers = getRandziPai(9);             //随机发牌
-	//handPokers.emplace_back(kindpai);
-	//handPokers.emplace_back(kindpai);
-	//handPokers.emplace_back(kindpai);
-	//handPokers.emplace_back(kindpai);
-	vector<int> handPokers = { 104,204,204,107,107,110,110,108,108,208,103,104,105,206,207 ,208,101,201};//,206 };
+	vector<int> handPokers = getRandziPai(16);             //随机发牌
+	printfvector(handPokers);
+	//vector<int> handPokers = { 210,103,109,108,105,104,209,207,202 };
 	handPokers.emplace_back(kindpai);
 	handPokers.emplace_back(kindpai);
-	//handPokers.emplace_back(kindpai);
-	//vector<int> handPokers = { 104,105,106,104,105,106,108,108,208,110,110,210,205,206,207,206,207,208 ,101,102,203};
+	handPokers.emplace_back(kindpai);
+	handPokers.emplace_back(kindpai);
+	
 	map<int, int> res;
 	int huxi = 0;
+	auto start = std::chrono::system_clock::now();
+
 	getTingPai(handPokers,res, huxi);
 
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 	for (auto it = res.begin(); it != res.end(); it++)
 	{
 		cout << " ting:" << it->first << " hufen:" << it->second << endl;
@@ -1299,11 +1436,7 @@ int main()         //算听啥
 	srand((unsigned int)time(unsigned(NULL)));
 	while (getchar())
 	{
-		auto start = std::chrono::system_clock::now();
 		test();
-		auto end = std::chrono::system_clock::now();
-		std::chrono::duration<double> elapsed_seconds = end - start;
-		std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 	}
 
 	getchar();
