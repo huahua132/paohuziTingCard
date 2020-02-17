@@ -522,7 +522,7 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 		{
 			combination2(pai_Count,vaildcombis, i, tempcombss);
 		}
-		if (tempcombss.size() > 0) break;
+		//if (tempcombss.size() > 0) break;
 	}
 
 	for (int i = 0; i < tempcombss.size(); i++)
@@ -666,7 +666,7 @@ void setChuTingCard(const vector<int>& combi, map<int, int> &resChu_ting,
 			//resChu_ting[value[firstIndex] + 100] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao);      //有可能会笑 
 
 		if (type[firstIndex] == type[scondIndex] && type[scondIndex] == 2)
-			Setres_ting_hu(resChu_ting, value[firstIndex] + 100, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao));
+			Setres_ting_hu(resChu_ting, value[firstIndex] + 200, pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao));
 			//resChu_ting[value[firstIndex] + 200] = pubicHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao);      //有可能会笑 
 	}
 	else
@@ -984,7 +984,7 @@ void DTwoKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_h
 		type[i] = getPaiType(handpokers[i]);
 		value[i] = getPaiValue(handpokers[i]);
 	}
-	setChuTingCard(handpokers, tempChuTing, value, type, 0, 1, tempHuxi);
+	setChuTingCard(handpokers, tempChuTing, value, type, 0, 1, 0);
 	if (tempChuTing.size() != 0)
 	{
 		//一个赖子可以解决一对
@@ -1044,8 +1044,8 @@ void DThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting
 		{
 			map<int, int> tempChuTing1;
 			map<int, int> tempChuTing2;
-			setChuTingCard(handpokers, tempChuTing1, value, type, comb[0], comb[1], tempHuxi);
-			setChuTingCard(handpokers, tempChuTing2, value, type, comb[2], comb[3], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing1, value, type, comb[0], comb[1], 0);
+			setChuTingCard(handpokers, tempChuTing2, value, type, comb[2], comb[3], 0);
 			size_t size1 = tempChuTing1.size();
 			size_t size2 = tempChuTing2.size();
 
@@ -1093,14 +1093,14 @@ void DThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting
 
 void DFourKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_hu, const int & tempHuxi)
 {
-	//王 王 王 王 一 一 一 二 三 四  王是3个，到这里手牌数肯定是模除3余0
+	//王 王 王 王 一 一 一 二 三 四  王是4个，到这里手牌数肯定是模除3余0
 	vector<int> tempTypeHuxi = { paixingHuxi.at(PaiXinHuxi::x_xiao),paixingHuxi.at(PaiXinHuxi::d_xiao) };
 	size_t handSize = handpokers.size();
 	switch (handSize)
 	{
 	case 0:
 	{
-		DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi + paixingHuxi.at(PaiXinHuxi::x_xiao));
+		DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi + paixingHuxi.at(PaiXinHuxi::d_xiao));
 		break;
 	}
 	case 3:
@@ -1124,7 +1124,7 @@ void DFourKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_
 		for (const auto &comb : indexValue)
 		{
 			map<int, int> tempChuTing;
-			setChuTingCard(handpokers, tempChuTing, value, type, comb[0], comb[1], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing, value, type, comb[0], comb[1], 0);
 			if (tempChuTing.size() != 0)
 			{
 				for (auto& paiValue : AllPaiValue)
@@ -1249,7 +1249,12 @@ void STwoKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting_h
 		for (const auto &comb : indexValue)
 		{
 			map<int, int> tempChuTing;
-			setChuTingCard(handpokers, tempChuTing, value, type, comb[0], comb[1], tempHuxi);
+			setChuTingCard(handpokers, tempChuTing, value, type, comb[0], comb[1], 0);
+			int maxTempHuxi = 0;
+			for (const auto& ting_hu : tempChuTing)
+			{
+				maxTempHuxi = max(maxTempHuxi, ting_hu.second);
+			}
 			if (tempChuTing.size() != 0)
 			{
 				vector<int> temp(1, handpokers[comb[2]]);
@@ -1283,13 +1288,18 @@ void SThreeKindPaiTingRes(const vector<int>& handpokers, map<int, int>& res_ting
 	case 2:
 	{
 		map<int, int> tempChuTing;
-		setChuTingCard(handpokers, tempChuTing, value, type, 0, 1, tempHuxi);
+		setChuTingCard(handpokers, tempChuTing, value, type, 0, 1, 0);
+		int maxTempHuxi = 0;
+		for (const auto& tempHuxi : tempChuTing)
+		{
+			maxTempHuxi = max(tempHuxi.second, maxTempHuxi);
+		}
 		if (tempChuTing.size() != 0)
 		{
 			for (auto& paiValue : AllPaiValue)
 			{
 				int temptype = getPaiType(paiValue);
-				Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[temptype - 1]);
+				Setres_ting_hu(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[temptype - 1]);
 			}
 		}
 		
@@ -1551,9 +1561,9 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,const int& hux
 
 void test()
 {
-	vector<int> handPokers = getRandziPai(16);             //随机发牌
-	printfvector(handPokers);
-	//vector<int> handPokers = {102, 207, 107, 105, 201, 202,101, 102, 208, 201, 209, 210, 106, 207, 103, 109 };
+	//vector<int> handPokers = getRandziPai(16);             //随机发牌
+	//printfvector(handPokers);
+	vector<int> handPokers = {102, 207, 107, 105, 201, 202,101, 102, 208, 201, 209, 210, 106, 207, 103, 109 };
 	handPokers.emplace_back(kindpai);
 	handPokers.emplace_back(kindpai);
 	handPokers.emplace_back(kindpai);
