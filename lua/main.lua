@@ -1,6 +1,6 @@
 
 package.path = package.path ..';..\\?.lua'
-require 'TingLogic'
+require 'TingpaiLogic'
 print(package.path)
 
 function table.clone (hands)
