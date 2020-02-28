@@ -1,4 +1,4 @@
-TingpaiLogic = {}
+﻿TingpaiLogic = {}
 
 TingpaiLogic.AllPaiValue = 
 {
@@ -50,7 +50,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
             print(logStr)]]
             if #combi[#combi] == 2 then
                 TingpaiLogic.getchuTingPairByTwo(combi[#combi], res_ting_hu, tempHufen)
-            elseif #combi[#combi] == 2 then
+            elseif #combi[#combi] == 4 then
                 TingpaiLogic.getchuTingPairByFour(combi[#combi], res_ting_hu, tempHufen)
             else
                 local Logstr = "#combisCount:" .. #combi[#combi] .. "  "
@@ -688,10 +688,10 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起
 
 	local indexValue =   --三张组合 打出一张单挑情况
 	{
-		{0,1,2,3},
-		{0,1,3,2},
-		{0,2,3,1},
-		{1,2,3,0}
+		{1,2,3,4},
+		{1,2,4,3},
+		{1,3,4,2},
+		{2,3,4,1}
 	}
     
 	local firstIndex
