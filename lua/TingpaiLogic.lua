@@ -7,6 +7,7 @@ TingpaiLogic.AllPaiValue =
 };
 
 function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
+
     local handPokers    = table.clone(_handPokers)
     local kindNum       = TingpaiLogic.getCountAndDelByHand(handPokers,g_phzCards.kind_CardValue)
     local xiaoQiang     = TingpaiLogic.resolvexiaoQingPai(handPokers)
@@ -24,7 +25,8 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
 
     local markTempList = {}
     if kindNum > 0 then
-        for  i = 1, #combis do	
+        TingpaiLogic.kindPaiBuTiPai(_handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
+        for  i = 1, #combis do
             local lastIndex = #combis[i]
             if #combis[i][lastIndex] < kindNum * 2 then                                    
 				local tempHufen = TingpaiLogic.GetvalidCombiHufen(combis[i]) + xiaoQiangHuxi
@@ -88,6 +90,34 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
         end
     end
      return {isCantihu = isCantihu, maxTihuxi = maxTihuxi}
+end
+
+function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
+    if #xiaoQiang == 0 then
+        return
+    end
+    local temphandpokers = table.clone(handPokers)
+    local xiaoPaiValue = {}
+    table.sort(temphandpokers)
+    for _index,paiCombi in ipairs(xiaoQiang) do
+        if #paiCombi == 3 then
+            if TingpaiLogic.getPaiType(paiCombi[1]) == 1 then
+                table.insert(xiaoPaiValue,#xiaoPaiValue + 1,paiCombi[1])
+            else
+                table.insert(xiaoPaiValue,1,paiCombi[1])
+            end
+        end
+    end
+    local kindStartPos = #handPokers - kindNum + 1   --王赖开始下标，这样用，handpokers必须是升序，kindpaivalue大于其他牌值
+    for _index, paivalue in ipairs(xiaoPaiValue) do
+        if kindNum > 0 then
+            temphandpokers[kindStartPos] = paivalue
+            kindNum = kindNum - 1
+            kindStartPos = kindStartPos + 1
+            TingpaiLogic.getTingPaiList(temphandpokers,ret_tingHu,huxi)
+        end
+    end
+
 end
 
 function TingpaiLogic.getKindPai_ting_hu(handpokers,res_ting_hu, kindNum, tempHuxi)
@@ -927,7 +957,7 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
    local res = {}
    table.sort( _handpokers )
 
-   local paiCount = 0
+    local paiCount = 0
 	local tempVal = 0
 	local left = 1
 	local right = #_handpokers
@@ -938,6 +968,7 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
             if paiCount >= 3 then
                 table.insert( res,{})
 				delStartIndex = left - paiCount
+                left = left - paiCount
 				tmpPaicount = paiCount
                 while paiCount > 0 do
                     _handpokers[delStartIndex], _handpokers[right] = _handpokers[right],_handpokers[delStartIndex]
@@ -949,9 +980,6 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
 					table.insert(res[#res],_handpokers[#_handpokers])
                     table.remove(_handpokers,#_handpokers)
                     tmpPaicount = tmpPaicount - 1
-                end
-				if left > right then
-                    break
                 end
             end
 			tempVal = _handpokers[left]
