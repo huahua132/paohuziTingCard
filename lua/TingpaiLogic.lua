@@ -114,7 +114,7 @@ function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,hu
             temphandpokers[kindStartPos] = paivalue
             kindNum = kindNum - 1
             kindStartPos = kindStartPos + 1
-            TingpaiLogic.getTingPaiList(temphandpokers,ret_tingHu,huxi)
+            TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi)
         end
     end
 
