@@ -1,4 +1,4 @@
-TingpaiLogic = {}
+﻿TingpaiLogic = {}
 
 TingpaiLogic.AllPaiValue = 
 {
