@@ -352,6 +352,7 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing = {}
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0)
+            TingpaiLogic.setChuTingCard(handpokers, ret_tingHu, value, type, comb[1], comb[2], tempHuxi + tempTypeHuxi[type[comb[3]]])
             local maxTempHuxi = 0
             local size = 0
             for ting,hu in pairs(tempChuTing) do
