@@ -50,6 +50,17 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
             print(logStr)]]
             if #combi[#combi] == 2 then
                 TingpaiLogic.getchuTingPairByTwo(combi[#combi], res_ting_hu, tempHufen)
+                if combi[#combi][1] == combi[#combi][2] and #xiaoQiang >= 1 then --做将提胡的情况 网友新加
+                    for _indexXiao,_valueXiao in ipairs(xiaoQiang) do
+                        if #_valueXiao == 3 then
+                           if TingpaiLogic.getPaiType(_valueXiao[1]) == 2 then
+                                TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],tempHufen + (g_phzHuxi.b_qing - g_phzHuxi.b_xiao))
+                           else
+                               TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],tempHufen + (g_phzHuxi.s_qing - g_phzHuxi.s_xiao))
+                           end
+                        end
+                    end
+                end
             elseif #combi[#combi] == 4 then
                 TingpaiLogic.getchuTingPairByFour(combi[#combi], res_ting_hu, tempHufen)
             else
