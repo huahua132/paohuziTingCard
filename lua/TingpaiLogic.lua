@@ -1,4 +1,4 @@
-﻿TingpaiLogic = {}
+TingpaiLogic = {}
 
 TingpaiLogic.AllPaiValue = 
 {
@@ -39,7 +39,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
         local tempHufen = 0
         for i,combi in ipairs(combis) do
             tempHufen = TingpaiLogic.GetvalidCombiHufen(combi) + xiaoQiangHuxi
-           --[[ local logStr = ""
+            --[[local logStr = ""
             for  i = 1, #combi do              --最后一组不是有效组合
                 logStr = logStr .. "["
                 for  LOOP = 1, #combi[i] do
@@ -474,118 +474,134 @@ function TingpaiLogic.getmarkTempl(handpokers)
 
             if (value == 1) then
             
-                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 3] == nil) then--101 102 103
-                
+                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 3] == nil) then--101 102 补 103
+
                     markTempl[type * 100 + 3] = 1
                 
-                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 2] == nil) then--101 103 102
+                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 2] == nil) then--101 103 补 102
                 
                     markTempl[type * 100 + 2] = 1
                 end
             
             elseif (value == 2) then
             
-                if (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 10] == nil) then
+                if (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 10] == nil) then -- 2 7 补 10
                 
                     markTempl[type * 100 + 10] = 1
                 
-                elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 7] == nil) then
+                elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 7] == nil) then -- 2 10 补 7
                 
                     markTempl[type * 100 + 7] = 1
                 
-                elseif (pai_count[type * 100 + 1] == 1 and pai_count[type * 100 + 3] == nil) then
+                elseif (pai_count[type * 100 + 1] == 1 and pai_count[type * 100 + 3] == nil) then -- 2 1 补 3
                 
                     markTempl[type * 100 + 3] = 1
                 
-                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 1] == nil) then
+                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 1] == nil) then -- 2 3 补 1
                 
                     markTempl[type * 100 + 1] = 1
                 
-                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 4] == nil) then
+                elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 4] == nil) then -- 2 3 补 4
                 
                     markTempl[type * 100 + 4] = 1
                 
-                elseif (pai_count[type * 100 + 4] == 1 and pai_count[type * 100 + 3] == nil) then
+                elseif (pai_count[type * 100 + 4] == 1 and pai_count[type * 100 + 3] == nil) then -- 2 4 补 3
                 
                     markTempl[type * 100 + 3] = 1
                 end
         
             elseif (value == 7) then
             
-                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 10] == nil) then
+                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 10] == nil) then -- 7 2 补 10
                 
                     markTempl[type * 100 + 10] = 1
                 
-                elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 2] == nil) then
+                elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 2] == nil) then -- 7 10 补 2
                 
                     markTempl[type * 100 + 2] = 1
                 
-                elseif (pai_count[type * 100 + 5] == 1 and pai_count[type * 100 + 6] == nil) then
+                elseif (pai_count[type * 100 + 5] == 1 and pai_count[type * 100 + 6] == nil) then -- 7 5 补 6
                 
                     markTempl[type * 100 + 6] = 1
                 
-                elseif (pai_count[type * 100 + 6] == 1 and pai_count[type * 100 + 5] == nil) then
+                elseif (pai_count[type * 100 + 6] == 1 and pai_count[type * 100 + 5] == nil) then -- 7 6 补 5
                 
                     markTempl[type * 100 + 5] = 1
+
+                elseif (pai_count[type * 100 + 6] == 1 and pai_count[type * 100 + 8] == nil) then -- 7 6 补 8
+
+                    markTempl[type * 100 + 8] = 1
+
+                elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 6] == nil) then -- 7 8 补 6
+
+                    markTempl[type * 100 + 6] = 1
                 
-                elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then
+                elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then -- 7 8 补 9
                 
                     markTempl[type * 100 + 9] = 1
                 
-                elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then
+                elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then -- 7 9 补 8
                 
                     markTempl[type * 100 + 8] = 1
                 end
             
             elseif (value == 9) then
             
-                if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then
+                if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then --9 7 补 8
                 
                     markTempl[handpokers[i] - 1] = 1
                 
-                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then
+                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then -- 9 8 补 7
                 
                     markTempl[handpokers[i] - 2] = 1
                 
-                elseif (pai_count[handpokers[i] + 2] == 1 and pai_count[handpokers[i] + 1] == nil) then
+                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 9 8 补 10
                 
                     markTempl[handpokers[i] + 1] = 1
                 end
             
             elseif (value == 10) then
             
-                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 7] == nil) then
+                if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 7] == nil) then -- 10 2 补 7
                 
                     markTempl[type * 100 + 7] = 1
                 
-                elseif (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 2] == nil) then
+                elseif (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 2] == nil) then -- 10 7 补 2
                 
                     markTempl[type * 100 + 2] = 1
                 
-                elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then
+                elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then -- 10 8 补 9
                 
                     markTempl[type * 100 + 9] = 1
                 
-                elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then
+                elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then -- 10 9 补 8
                 
                     markTempl[type * 100 + 8] = 1
                 end
             
             else
-            
-                if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then
+                --假设value == 6
+                if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then --6 4 补 5
                 
                     markTempl[handpokers[i] - 1] = 1
                 
-                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then
+                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then -- 6 5 补 4
                 
                     markTempl[handpokers[i] - 2] = 1
+
+                elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 6 5 补 7
+
+                    markTempl[handpokers[i] + 1] = 1
+
+                elseif (pai_count[handpokers[i] + 1] == 1 and pai_count[handpokers[i] - 1] == nil) then -- 6 7 补 5
+
+                    markTempl[handpokers[i] - 1] = 1
                 
-                elseif (pai_count[handpokers[i] + 2] == 1 and pai_count[handpokers[i] + 1] == nil) then
+                elseif (pai_count[handpokers[i] + 2] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 6 8 补 7
                 
                     markTempl[handpokers[i] + 1] = 1
                 
-                elseif (pai_count[handpokers[i] + 1] == 1 and pai_count[handpokers[i] + 2] == nil) then
+                elseif (pai_count[handpokers[i] + 1] == 1 and pai_count[handpokers[i] + 2] == nil) then -- 6 7 补 8
                 
                     markTempl[handpokers[i] + 2] = 1
                 end
