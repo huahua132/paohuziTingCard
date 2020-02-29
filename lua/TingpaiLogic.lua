@@ -4,7 +4,17 @@ TingpaiLogic.AllPaiValue =
 {
 	101,102,103,104,105,106,107,108,109,110,
 	201,202,203,204,205,206,207,208,209,210
-};
+}
+
+g_phzCards = {}
+g_phzCards.kind_CardValue = 555
+g_phzHuxi = {}
+g_phzHuxi.b_xiao = 6
+g_phzHuxi.s_xiao = 3
+g_phzHuxi.b_qing = 12
+g_phzHuxi.s_qing = 9
+g_phzHuxi.s_chi = 3
+g_phzHuxi.b_chi = 6
 
 function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
 
@@ -73,6 +83,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
                 for i,v in ipairs(combi[#combi]) do
                     Logstr = Logstr .. v .. " "
                 end
+                print(Logstr)
             end
         end
 
@@ -164,13 +175,17 @@ function TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
     end
     TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, 1, 2, 0)
     local size = 0
+    local maxTempHuxi = 0
     for i,v in pairs(tempChuTing) do
         size = 1
+        if v >= maxTempHuxi then
+            maxTempHuxi = v
+        end
     end
 	if size > 0 then
         --一个赖子可以解决一对就单挑所以牌
         for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempChuTing[paiValue])
+            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi)
         end
 	else
 		local temComs1 = {handpokers[1], handpokers[1]}
@@ -218,24 +233,27 @@ function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 			TingpaiLogic.setChuTingCard(handpokers, tempChuTing1, value, type, comb[1], comb[2], 0);
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing2, value, type, comb[3], comb[4], 0);
             local size1 = 0
+            local maxTempHuxi1 = 0
             local size2 = 0
+            local maxTempHuxi2 = 0
             for ting1,hu1 in pairs(tempChuTing1) do
                 size1 = 1
-                break
+                if hu1 >= maxTempHuxi1 then
+                    maxTempHuxi1 = hu1
+                end
             end
             for ting2,hu2 in pairs(tempChuTing2) do
                 size2 = 1
-                break
-            end
-		
-			if size1 > 0 and size2 > 0 then     --能解决2对
-                for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-                    tempChuTing1[paiValue] = tempChuTing1[paiValue] or 0
-                    tempChuTing2[paiValue] = tempChuTing2[paiValue] or 0 
-                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type] + tempChuTing1[paiValue] + tempChuTing2[paiValue])
+                if hu2 >= maxTempHuxi2 then
+                    maxTempHuxi2 = hu2
                 end
-				break
-			end
+            end
+
+            if size1 > 0 and size2 > 0 then     --能解决2对
+                for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
+                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type] + maxTempHuxi1 + maxTempHuxi2)
+                end
+            end
 		
 			if size1 > 0 then
 				local temComs1 = {handpokers[comb[3]],handpokers[comb[3]]}
@@ -288,12 +306,16 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 			local tempChuTing = {}
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0)
             local size = 0
+            local maxTempHuxi = 0
             for ting,hu in pairs(tempChuTing) do
                 size = 1
+                if hu > maxTempHuxi then
+                    maxTempHuxi = hu
+                end
             end
 			if size > 0 then
                 for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempChuTing[paiValue] + tempTypeHuxi[type[comb[3]]])
+                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[type[comb[3]]])
                 end
 			end
 			TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[comb[3]], tempHuxi + tempTypeHuxi[type[comb[1]]] + tempTypeHuxi[type[comb[2]]]);
@@ -795,31 +817,25 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起
 	
 		if (TingpaiLogic.isVaildCombi({ combi[indexValue[i][1]],combi[indexValue[i][2]], combi[indexValue[i][3]] })) then
 		
-			--既然剩2张 则是打出一张听另一张嘛
+			--既然剩1张 就单钓呗
 			local tempHufen = 0
-			if (value[indexValue[i][1]] == 1) then
-			
-				if (value[indexValue[i][1]] == 1) then
-				
-					tempHufen = g_phzHuxi.s_chi
-				
-				else
-				
-				    tempHufen = g_phzHuxi.b_chi
+            if type[indexValue[i][1]] == type[indexValue[i][2]] and type[indexValue[i][2]] == type[indexValue[i][3]] then --这里考虑加胡系
+                if value[indexValue[i][1]] == 1 and value[indexValue[i][2]] == 2 and value[indexValue[i][3]] == 3 then
+                    if (type[indexValue[i][1]] == 1) then
+                        tempHufen = g_phzHuxi.s_chi
+                    else
+                        tempHufen = g_phzHuxi.b_chi
+                    end
+                elseif value[indexValue[i][1]] == 2 and value[indexValue[i][2]] == 7 and value[indexValue[i][3]] == 10 then
+                    if (type[indexValue[i][1]] == 1) then
+                        tempHufen = g_phzHuxi.s_chi
+                    else
+                        tempHufen = g_phzHuxi.b_chi
+                    end
                 end
-			
-			elseif (value[indexValue[i][1]] == 2) then
-			
-				if (value[indexValue[i][1]] == 1) then
-				
-					tempHufen = g_phzHuxi.s_chi
-				
-				else
-				
-					tempHufen = g_phzHuxi.b_chi
-                end
+
             end
-            firstIndex = indexValue[i][3]
+            firstIndex = indexValue[i][4]
             TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex],pubicHuxi + tempHufen)
 			--resChu_ting[combi[firstIndex]] = pubicHuxi + tempHufen
 		end
