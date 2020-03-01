@@ -11,19 +11,16 @@ function table.clone (hands)
     return han
 end
 
-g_phzCards = {}
-g_phzCards.kind_CardValue = 555
-g_phzHuxi = {}
-g_phzHuxi.b_xiao = 6
-g_phzHuxi.s_xiao = 3
-g_phzHuxi.b_qing = 12
-g_phzHuxi.s_qing = 9
-local handpoker = {555,203,206,207,208,108,108,108,109,209,209}
+local handpoker = {555,102,103,104,201,202,203,204,205,206,208,208,208,210,210,110,107,107,207,203}
 local ret_tingHu = {}
-ret = TingpaiLogic.getTingPaiList(handpoker,ret_tingHu,0)
+TingpaiLogic.getTingPaiList(handpoker,ret_tingHu,0,{})
 
-for i,v in pairs(ret_tingHu) do
-    print(i,v)
+for tingpaiValue,item in pairs(ret_tingHu) do
+    local logStr = "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi] .. "  cards:"
+    for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
+        logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
+    end
+    print(logStr)
 end
 
 print("ok")

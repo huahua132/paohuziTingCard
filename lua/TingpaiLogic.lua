@@ -6,6 +6,11 @@ TingpaiLogic.AllPaiValue =
 	201,202,203,204,205,206,207,208,209,210
 }
 
+TingpaiLogic.resIndex =
+{
+    huxi = 1,
+    combi = 2
+}
 g_phzCards = {}
 g_phzCards.kind_CardValue = 555
 g_phzHuxi = {}
@@ -16,7 +21,7 @@ g_phzHuxi.s_qing = 9
 g_phzHuxi.s_chi = 3
 g_phzHuxi.b_chi = 6
 
-function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
+function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --headcombi {{101,101,101},{202,202,202}}
 
     local handPokers    = table.clone(_handPokers)
     local kindNum       = TingpaiLogic.getCountAndDelByHand(handPokers,g_phzCards.kind_CardValue)
@@ -24,6 +29,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
     local xiaoQiangHuxi = TingpaiLogic.getxiaoQingHuxi(xiaoQiang) + huxi
     local isCantihu = false --是否可以提胡
     local maxTihuxi = 0     --最大提胡胡系
+    local newHeadCombi = TingpaiLogic.GetNewconnectCombis(xiaoQiang,headcombi)
     table.sort( handPokers )
     local combis = {}
     if (#handPokers < 3) then
@@ -38,10 +44,12 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
         TingpaiLogic.kindPaiBuTiPai(_handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
         for  i = 1, #combis do
             local lastIndex = #combis[i]
+            local tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
+            table.remove(tempNewHeadCombi,#tempNewHeadCombi)               --最后一组不是有效的
             if #combis[i][lastIndex] < kindNum * 2 then                                    
 				local tempHufen = TingpaiLogic.GetvalidCombiHufen(combis[i]) + xiaoQiangHuxi
                 table.sort(combis[i][lastIndex])
-                local tempRet = TingpaiLogic.getKindPai_ting_hu(combis[i][lastIndex],res_ting_hu, kindNum, tempHufen)
+                local tempRet = TingpaiLogic.getKindPai_ting_hu(combis[i][lastIndex],res_ting_hu, kindNum, tempHufen,tempNewHeadCombi)
                 if tempRet.isCantihu == true then
                     isCantihu = true
                     maxTihuxi = tempRet.maxTihuxi > maxTihuxi and tempRet.maxTihuxi or maxTihuxi
@@ -49,7 +57,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
             elseif #combis[i][lastIndex] <= kindNum * 2 + 2 then
                 markTempList = TingpaiLogic.getmarkTempl(combis[i][lastIndex])
                 if #markTempList >= kindNum then
-                   local tempRet = TingpaiLogic.markDnfTingCard(markTempList,combis[i][lastIndex],res_ting_hu,kindNum,xiaoQiangHuxi)
+                   local tempRet = TingpaiLogic.markDnfTingCard(markTempList,combis[i][lastIndex],res_ting_hu,kindNum,xiaoQiangHuxi,tempNewHeadCombi)
                     if tempRet.isCantihu == true then
                         isCantihu = true
                         maxTihuxi = tempRet.maxTihuxi > maxTihuxi and tempRet.maxTihuxi or maxTihuxi
@@ -60,6 +68,8 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
     else
         local tempHufen = 0
         for i,combi in ipairs(combis) do
+            local tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
+            table.remove(tempNewHeadCombi,#tempNewHeadCombi)               --最后一组不是有效的
             tempHufen = TingpaiLogic.GetvalidCombiHufen(combi) + xiaoQiangHuxi
             --[[local logStr = ""
             for  i = 1, #combi do              --最后一组不是有效组合
@@ -71,13 +81,13 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
             end
             print(logStr)]]
             if #combi[#combi] == 2 then
-                TingpaiLogic.getchuTingPairByTwo(combi[#combi], res_ting_hu, tempHufen)
+                TingpaiLogic.getchuTingPairByTwo(combi[#combi], res_ting_hu, tempHufen,tempNewHeadCombi)
                 if combi[#combi][1] == combi[#combi][2] and #xiaoQiang >= 1 then --做将提胡的情况 网友新加
                     isCantihu = true
                     maxTihuxi = maxTihuxi > tempHufen and maxTihuxi or tempHufen
                 end
             elseif #combi[#combi] == 4 then
-                TingpaiLogic.getchuTingPairByFour(combi[#combi], res_ting_hu, tempHufen)
+                TingpaiLogic.getchuTingPairByFour(combi[#combi], res_ting_hu, tempHufen,tempNewHeadCombi)
             else
                 local Logstr = "#combisCount:" .. #combi[#combi] .. "  "
                 for i,v in ipairs(combi[#combi]) do
@@ -93,14 +103,22 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi)
         for _indexXiao,_valueXiao in ipairs(xiaoQiang) do
             if #_valueXiao == 3 then
                 if TingpaiLogic.getPaiType(_valueXiao[1]) == 2 then
-                    TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],maxTihuxi + (g_phzHuxi.b_qing - g_phzHuxi.b_xiao))
+                    TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],maxTihuxi + (g_phzHuxi.b_qing - g_phzHuxi.b_xiao),{{}})
                 else
-                    TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],maxTihuxi + (g_phzHuxi.s_qing - g_phzHuxi.s_xiao))
+                    TingpaiLogic.setTing_huValue(res_ting_hu,_valueXiao[1],maxTihuxi + (g_phzHuxi.s_qing - g_phzHuxi.s_xiao),{{}})
                 end
             end
         end
     end
      return {isCantihu = isCantihu, maxTihuxi = maxTihuxi}
+end
+
+function TingpaiLogic.GetNewconnectCombis(combione,combitwo)
+    local tempCombi = table.clone(combione)
+    for i,v in ipairs(combitwo) do
+        table.insert(tempCombi,v)
+    end
+    return tempCombi or {}
 end
 
 function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
@@ -125,46 +143,46 @@ function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,hu
             temphandpokers[kindStartPos] = paivalue
             kindNum = kindNum - 1
             kindStartPos = kindStartPos + 1
-            TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi)
+            TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi,{})
         end
     end
 
 end
 
-function TingpaiLogic.getKindPai_ting_hu(handpokers,res_ting_hu, kindNum, tempHuxi)
+function TingpaiLogic.getKindPai_ting_hu(handpokers,res_ting_hu, kindNum, tempHuxi,headcombi)
     local handSize = #handpokers + kindNum;
 	if handSize % 3 == 1 then    --单钓
         if kindNum == 1 then
-            return TingpaiLogic.DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 2 then
-            return TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 3 then
-            return TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 4 then
-            return TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         end
 
     else
         if kindNum == 1 then
-            return TingpaiLogic.SOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.SOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 2 then
-            return TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 3 then
-            return TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         elseif kindNum == 4 then
-            return TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+            return TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
         end
     end
 end
 
-function TingpaiLogic.DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-        TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi)
+        TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi,headcombi)
     end
     return {isCantihu = false, maxTihuxi = 0}
 end
 
-function TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     --王 王  一 一 一 二 三 四   五 六  王是2个，到这里手牌数肯定是模除3余2
 	local tempChuTing = {}
 	local type = {0,0}
@@ -176,38 +194,47 @@ function TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
     TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, 1, 2, 0)
     local size = 0
     local maxTempHuxi = 0
+    local maxKindTipai = 0
     for i,v in pairs(tempChuTing) do
         size = 1
         if v >= maxTempHuxi then
             maxTempHuxi = v
+            maxKindTipai = i
         end
     end
+
 	if size > 0 then
+        table.insert(handpokers,maxKindTipai)
+        table.sort(handpokers)
+        table.insert(headcombi,handpokers)
+        table.insert(headcombi,{0})
         --一个赖子可以解决一对就单挑所以牌
         for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi)
+            headcombi[#headcombi][1] = paiValue
+            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi,headcombi)
         end
 	else
-		local temComs1 = {handpokers[1], handpokers[1]}
-		local temComs2 = {handpokers[2],handpokers[2]}
-		local type1 = {TingpaiLogic.getPaiType(handpokers[1]), TingpaiLogic.getPaiType(handpokers[1])}
-		local value1 = {TingpaiLogic.getPaiValue(handpokers[1]),TingpaiLogic.getPaiValue(handpokers[1])} 
-		local type2 = {TingpaiLogic.getPaiType(handpokers[2]), TingpaiLogic.getPaiType(handpokers[2])}
-		local value2 = {TingpaiLogic.getPaiValue(handpokers[2]),TingpaiLogic.getPaiValue(handpokers[2])} 
-		TingpaiLogic.setChuTingCard(temComs1, res_ting_hu, value1, type1, 1, 2, tempHuxi)
-		TingpaiLogic.setChuTingCard(temComs2, res_ting_hu, value2, type2, 1, 2, tempHuxi)
+        table.insert(headcombi,{})
+		local temComs1 = {handpokers[1]}
+		local temComs2 = {handpokers[2]}
+        headcombi[#headcombi] = {handpokers[1],handpokers[1]}
+        TingpaiLogic.DOneKindPaiTingRes(temComs1,res_ting_hu,tempHuxi,headcombi)
+        headcombi[#headcombi] = {handpokers[2],handpokers[2]}
+        TingpaiLogic.DOneKindPaiTingRes(temComs2,res_ting_hu,tempHuxi,headcombi)
     end
     return {isCantihu = false, maxTihuxi = 0}
 end
 
-function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     --王 王 王 一 一 一 二 三 四 五  王是3个，到这里手牌数肯定是模除3余1
 	local handSize = #handpokers
 	local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
 	local type = 0
     if handSize == 1 then
+        table.insert(headcombi,{0})
         for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type])
+            headcombi[#headcombi][1] = paiValue
+            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type],headcombi)
         end
     elseif handSize == 4 then
         local indexValue =   --三张组合 打出一张单挑情况
@@ -226,60 +253,68 @@ function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 			type[i] = TingpaiLogic.getPaiType(handpokers[i])
 			value[i] = TingpaiLogic.getPaiValue(handpokers[i])
         end
-
+        table.insert(headcombi,{})
+        table.insert(headcombi,{})
+        table.insert(headcombi,{})
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing1 = {} 
 			local tempChuTing2 = {}
-			TingpaiLogic.setChuTingCard(handpokers, tempChuTing1, value, type, comb[1], comb[2], 0);
-            TingpaiLogic.setChuTingCard(handpokers, tempChuTing2, value, type, comb[3], comb[4], 0);
+			TingpaiLogic.setChuTingCard(handpokers, tempChuTing1, value, type, comb[1], comb[2], 0,{});
+            TingpaiLogic.setChuTingCard(handpokers, tempChuTing2, value, type, comb[3], comb[4], 0,{});
             local size1 = 0
             local maxTempHuxi1 = 0
+            local maxKindtiPai1 = 0
             local size2 = 0
             local maxTempHuxi2 = 0
+            local maxKindtiPai2 = 0
             for ting1,hu1 in pairs(tempChuTing1) do
                 size1 = 1
                 if hu1 >= maxTempHuxi1 then
                     maxTempHuxi1 = hu1
+                    maxKindtiPai1 = ting1
                 end
             end
             for ting2,hu2 in pairs(tempChuTing2) do
                 size2 = 1
                 if hu2 >= maxTempHuxi2 then
                     maxTempHuxi2 = hu2
+                    maxKindtiPai2 = ting2
                 end
             end
 
             if size1 > 0 and size2 > 0 then     --能解决2对
+                headcombi[#headcombi - 2] = table.sort({comb[1], comb[2],maxKindtiPai1})
+                headcombi[#headcombi - 1] = table.sort({comb[3], comb[4],maxKindtiPai2})
                 for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type] + maxTempHuxi1 + maxTempHuxi2)
+                    headcombi[#headcombi][1] = paiValue
+                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type] + maxTempHuxi1 + maxTempHuxi2,headcombi)
                 end
             end
-		
-			if size1 > 0 then
-				local temComs1 = {handpokers[comb[3]],handpokers[comb[3]]}
-				local temComs2 = {handpokers[comb[4]],handpokers[comb[4]]}
-                local type1 = {TingpaiLogic.getPaiType(handpokers[comb[3]]),TingpaiLogic.getPaiType(handpokers[comb[3]])}
-				local value1 = {TingpaiLogic.getPaiValue(handpokers[comb[3]]),TingpaiLogic.getPaiValue(handpokers[comb[3]])}
-                local type2 = {TingpaiLogic.getPaiType(handpokers[comb[4]]),TingpaiLogic.getPaiType(handpokers[comb[4]])}
-				local value2 = {TingpaiLogic.getPaiValue(handpokers[comb[4]]),TingpaiLogic.getPaiValue(handpokers[comb[4]])}
-				TingpaiLogic.setChuTingCard(temComs1, res_ting_hu, value1, type1, 1, 2, tempHuxi)
-				TingpaiLogic.setChuTingCard(temComs2, res_ting_hu, value2, type2, 1, 2, tempHuxi)
-			elseif size2 > 0 then
-				local temComs1 = {handpokers[comb[1]],handpokers[comb[1]]}
-				local temComs2 = {handpokers[comb[2]],handpokers[comb[2]]}
-                local type1 = {TingpaiLogic.getPaiType(handpokers[comb[1]]),TingpaiLogic.getPaiType(handpokers[comb[1]])}
-				local value1 = {TingpaiLogic.getPaiValue(handpokers[comb[1]]),TingpaiLogic.getPaiValue(handpokers[comb[1]])}
-                local type2 = {TingpaiLogic.getPaiType(handpokers[comb[2]]),TingpaiLogic.getPaiType(handpokers[comb[2]])}
-				local value2 = {TingpaiLogic.getPaiValue(handpokers[comb[2]]),TingpaiLogic.getPaiValue(handpokers[comb[2]])}
-				TingpaiLogic.setChuTingCard(temComs1, res_ting_hu, value1, type1, 1, 2, tempHuxi)
-				TingpaiLogic.setChuTingCard(temComs2, res_ting_hu, value2, type2, 1, 2, tempHuxi)
+            table.remove(headcombi,#headcombi)
+            if size1 > 0 then
+                headcombi[#headcombi - 1] = table.sort({comb[1], comb[2],maxKindtiPai1})
+                local temComs1 = {handpokers[comb[3]]}
+                local temComs2 = {handpokers[comb[4]]}
+                headcombi[#headcombi] = {handpokers[comb[3]],handpokers[comb[3]]}
+                TingpaiLogic.DOneKindPaiTingRes(temComs1,res_ting_hu,tempHuxi,headcombi)
+                headcombi[#headcombi] = {handpokers[comb[4]],handpokers[comb[4]]}
+                TingpaiLogic.DOneKindPaiTingRes(temComs2,res_ting_hu,tempHuxi,headcombi)
+            end
+			if size2 > 0 then
+                headcombi[#headcombi - 1] = table.sort({comb[3], comb[4],maxKindtiPai2})
+                local temComs1 = {handpokers[comb[1]]}
+                local temComs2 = {handpokers[comb[2]]}
+                headcombi[#headcombi] = {handpokers[comb[1]],handpokers[comb[1]]}
+                TingpaiLogic.DOneKindPaiTingRes(temComs1,res_ting_hu,tempHuxi,headcombi)
+                headcombi[#headcombi] = {handpokers[comb[2]],handpokers[comb[2]]}
+                TingpaiLogic.DOneKindPaiTingRes(temComs2,res_ting_hu,tempHuxi,headcombi)
             end
         end
     end
     return {isCantihu = false, maxTihuxi = 0}
 end
 
-function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     --王 王 王 王 一 一 一 二 三 四  王是4个，到这里手牌数肯定是模除3余0
 	local handSize = #handpokers
 	local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
@@ -296,8 +331,11 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 
 		local type = {0,0,0}
 		local value = {0,0,0}
+        table.insert(headcombi,{})
+        table.insert(headcombi,{})
+        table.insert(headcombi,{})
 
-		for i = 1, #handpokers do
+        for i = 1, #handpokers do
 			type[i] = TingpaiLogic.getPaiType(handpokers[i])
 			value[i] = TingpaiLogic.getPaiValue(handpokers[i])
         end
@@ -307,18 +345,26 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0)
             local size = 0
             local maxTempHuxi = 0
+            local maxKindtiPai = 0
             for ting,hu in pairs(tempChuTing) do
                 size = 1
                 if hu > maxTempHuxi then
                     maxTempHuxi = hu
+                    maxKindtiPai = ting
                 end
             end
 			if size > 0 then
+                headcombi[#headcombi - 2] = { comb[1], comb[2],maxKindtiPai}
+                headcombi[#headcombi - 1] = { comb[3], comb[3],comb[3]}
                 for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[type[comb[3]]])
+                    headcombi[#headcombi] = {paiValue}
+                    TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[type[comb[3]]],headcombi)
                 end
 			end
-			TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[comb[3]], tempHuxi + tempTypeHuxi[type[comb[1]]] + tempTypeHuxi[type[comb[2]]]);
+            headcombi[#headcombi - 2] = { comb[1], comb[1],comb[1]}
+            headcombi[#headcombi - 1] = { comb[2], comb[2],comb[2]}
+            headcombi[#headcombi] = { comb[3]}
+			TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[comb[3]], tempHuxi + tempTypeHuxi[type[comb[1]]] + tempTypeHuxi[type[comb[2]]],headcombi)
 		end
     elseif handSize == 6 then
         local kindNum = 3
@@ -326,64 +372,77 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
         if #markTempl >= kindNum then
             table.insert(tempHandPoker,g_phzCards.kind_CardValue)
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
         end
     end
     return {isCantihu = false, maxTihuxi = 0}
 end
 
-function TingpaiLogic.SOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.SOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
 	--到这肯定是 1张王 和 剩一张牌
 	local type = TingpaiLogic.getPaiType(handpokers[1])
 	local value = TingpaiLogic.getPaiValue(handpokers[1])
-
+    table.insert(headcombi,{handpokers[1],0})
 	if (value > 1) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 1, tempHuxi)
+        headcombi[#headcombi][2] = handpokers[1] + 1      --value = 3 听 2 补 4
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 1, tempHuxi,headcombi)
     end
 
 	if (value > 2) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 2, tempHuxi)
+        headcombi[#headcombi][2] = handpokers[1] - 1      --value = 3 听 1 补 2
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 2, tempHuxi,headcombi)
     end
 
 	if (value < 10) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 1, tempHuxi)
+        headcombi[#headcombi][2] = handpokers[1] + 2      --value = 3 听 4 补 5
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 1, tempHuxi,headcombi)
     end
 
 	if (value < 9) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 2, tempHuxi)
+        headcombi[#headcombi][2] = handpokers[1] + 1      --value = 3 听 5 补 4
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 2, tempHuxi,headcombi)
     end
-
-	TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1], tempHuxi + tempTypeHuxi[type])
+    headcombi[#headcombi][2] = handpokers[1]              --value = 3 听 3 补 3
+	TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1], tempHuxi + tempTypeHuxi[type],headcombi)
 	if (type == 1) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 100, tempHuxi)
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] + 100, tempHuxi,headcombi)
 	else
-		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 100, tempHuxi)
+		TingpaiLogic.setTing_huValue(res_ting_hu, handpokers[1] - 100, tempHuxi,headcombi)
     end
 
 	--看能否听二七十
 	if (value == 2) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 7, tempHuxi + tempTypeHuxi[type])
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 10, tempHuxi + tempTypeHuxi[type])
+        headcombi[#headcombi][2] = type * 100 + 10              --value = 2 听 7 补 10
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 7, tempHuxi + tempTypeHuxi[type],headcombi)
+        headcombi[#headcombi][2] = type * 100 + 7              --value = 2 听 10 补 7
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 10, tempHuxi + tempTypeHuxi[type],headcombi)
 	elseif (value == 7) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 2, tempHuxi + tempTypeHuxi[type])
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 10, tempHuxi + tempTypeHuxi[type])
+        headcombi[#headcombi][2] = type * 100 + 10              --value = 7 听 2 补 10
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 2, tempHuxi + tempTypeHuxi[type],headcombi)
+        headcombi[#headcombi][2] = type * 100 + 2              --value = 7 听 10 补 2
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 10, tempHuxi + tempTypeHuxi[type],headcombi)
 	elseif (value == 10) then
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 2, tempHuxi + tempTypeHuxi[type])
-		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 7, tempHuxi + tempTypeHuxi[type])
+        headcombi[#headcombi][2] = type * 100 + 7              --value = 10 听 2 补 7
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 2, tempHuxi + tempTypeHuxi[type],headcombi)
+        headcombi[#headcombi][2] = type * 100 + 2              --value = 10 听 7 补 2
+		TingpaiLogic.setTing_huValue(res_ting_hu, type * 100 + 7, tempHuxi + tempTypeHuxi[type],headcombi)
     end
     return {isCantihu = true, maxTihuxi = tempHuxi}
 end
 
-function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     local handSize = #handpokers
     local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
     local isCantihu = false
     local maxTihuxi = 0
     if handSize == 0 then
+        table.insert(headcombi,{0,0})
         for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
             local type = TingpaiLogic.getPaiType(paiValue)
-            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type])
+            headcombi[#headcombi][1] = paiValue
+            headcombi[#headcombi][2] = paiValue
+            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type],headcombi)
         end
         return { isCantihu = true, maxTihuxi = tempHuxi }
     elseif handSize == 3 then
@@ -403,19 +462,22 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
 
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing = {}
-            TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0)
-            TingpaiLogic.setChuTingCard(handpokers, ret_tingHu, value, type, comb[1], comb[2], tempHuxi + tempTypeHuxi[type[comb[3]]])
+            TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0,{})
             local maxTempHuxi = 0
+            local maxKindtiPai = 0
             local size = 0
             for ting,hu in pairs(tempChuTing) do
                 if hu > maxTempHuxi then
                     maxTempHuxi = hu
+                    maxKindtiPai = ting
                 end
                 size = 1
             end
+
 			if (size > 0) then
+                table.insert(headcombi,{comb[1], comb[2],maxKindtiPai})
 				local temp ={ handpokers[comb[3]] }
-				local tempRet = TingpaiLogic.SOneKindPaiTingRes(temp, res_ting_hu, tempHuxi + maxTempHuxi)
+				local tempRet = TingpaiLogic.SOneKindPaiTingRes(temp, res_ting_hu, tempHuxi + maxTempHuxi,headcombi)
                 isCantihu = tempRet.isCantihu
                 maxTihuxi = maxTihuxi > tempRet.maxTihuxi and maxTihuxi or tempRet.maxTihuxi
             end
@@ -425,7 +487,7 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
     return {isCantihu = isCantihu, maxTihuxi = maxTihuxi}
 end
 
-function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
     local handSise = #handpokers
     local type = {}
@@ -435,48 +497,55 @@ function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
         table.insert(type,TingpaiLogic.getPaiType(handpokers[i]))
         table.insert(value,TingpaiLogic.getPaiValue(handpokers[i]))
     end
-
+    table.insert(headcombi,{})
+    table.insert(headcombi,{})
     if handSise == 2 then
         local tempChuTing = {}
-        TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, 1, 2, 0)
+        TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, 1, 2, 0,{})
         local size = 0
         local maxTempHuxi = 0
+        local maxKindtiPai = 0
         for ting,hu in pairs(tempChuTing) do
             if hu > maxTempHuxi then
                 maxTempHuxi = hu
+                maxKindtiPai = ting
             end
             size = 1
         end
 
 		if (size > 0) then
+            headcombi[#headcombi - 1] = {handpokers[1],handpokers[2],maxKindtiPai}
 			for i,paiValue in ipairs (TingpaiLogic.AllPaiValue) do
 				local temptype = TingpaiLogic.getPaiType(paiValue)
-				TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[temptype])
+                headcombi[#headcombi] = {paiValue,paiValue}
+                TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + maxTempHuxi + tempTypeHuxi[temptype],headcombi)
             end
 		end
-
+        table.remove(headcombi,#headcombi)
 		local tempHand1 = {handpokers[1]}
 		local tempHand2 = {handpokers[2]}
-
-		TingpaiLogic.SOneKindPaiTingRes(tempHand1, res_ting_hu, tempHuxi + tempTypeHuxi[type[1]])
-		TingpaiLogic.SOneKindPaiTingRes(tempHand2, res_ting_hu, tempHuxi + tempTypeHuxi[type[2]])
+        headcombi[#headcombi] = {handpokers[1],handpokers[1],handpokers[1]}
+		TingpaiLogic.SOneKindPaiTingRes(tempHand1, res_ting_hu, tempHuxi + tempTypeHuxi[type[1]],headcombi)
+        headcombi[#headcombi] = {handpokers[2],handpokers[2],handpokers[2]}
+		TingpaiLogic.SOneKindPaiTingRes(tempHand2, res_ting_hu, tempHuxi + tempTypeHuxi[type[2]],headcombi)
         local maxTempHuxi = tempTypeHuxi[type[1]] > tempTypeHuxi[type[2]] and tempTypeHuxi[type[1]] or tempTypeHuxi[type[2]]
         return {isCantihu = true, maxTihuxi = tempHuxi + maxTempHuxi}
+
     elseif handSise == 5 then
         local kindNum = 2
 		local tempHandPoker = table.clone(handpokers)
 		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
 		if (#markTempl >= kindNum) then
             table.insert(tempHandPoker,g_phzCards.kind_CardValue)
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
         end
     end
     return {isCantihu = false, maxTihuxi = 0}
 end
 
-function TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
+function TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
     --四张王 剩 1 4 7
-    local tempTypeHuxi = { g_phzHuxi.s_xiao,g_phzHuxi.b_xiao}
+    local tempHuxi = {g_phzHuxi.s_qing,g_phzHuxi.b_qing}
     local handSise = #handpokers
 
     local type = {}
@@ -491,38 +560,48 @@ function TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi)
     local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
     
     if handSise == 1 then
+        table.insert(headcombi,{g_phzCards.kind_CardValue,g_phzCards.kind_CardValue,g_phzCards.kind_CardValue})
         for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
-            local type = TingpaiLogic.getPaiType(paiValue)
-            TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type])
+            TingpaiLogic.SOneKindPaiTingRes({paiValue},res_ting_hu,tempHuxi + g_phzHuxi.b_xiao,headcombi)
         end
+        headcombi[#headcombi] = {handpokers[1],handpokers[1]}
+        table.insert(headcombi,{0,0,0})
+        for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
+            headcombi[#headcombi][1] = paiValue
+            headcombi[#headcombi][2] = paiValue
+            headcombi[#headcombi][3] = paiValue
+            local type = TingpaiLogic.getPaiType(paiValue)
+            TingpaiLogic.setTing_huValue(res_ting_hu,tempHuxi + tempHuxi[type],headcombi)
+        end
+
         return {isCantihu = true, maxTihuxi = tempHuxi + tempTypeHuxi[type]}
     elseif handSise == 4 then
         local kindNum = 2
         table.insert(tempHandPoker,g_phzCards.kind_CardValue)
         table.insert(tempHandPoker,g_phzCards.kind_CardValue)
 		if (#markTempl >= kindNum) then
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
 		elseif (#markTempl >= kindNum - 1) then
 			table.insert(tempHandPoker,g_phzCards.kind_CardValue)
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 1, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 1, tempHuxi,headcombi)
         end
     elseif handSise == 7 then
         local kindNum = 3
 		table.insert(tempHandPoker,g_phzCards.kind_CardValue)
 		if #markTempl >= kindNum then
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
 		elseif (#markTempl >= kindNum - 1) then
 			table.insert(tempHandPoker,g_phzCards.kind_CardValue)
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 1, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 1, tempHuxi,headcombi)
 		elseif (#markTempl >= kindNum - 2) then
 			table.insert(tempHandPoker,g_phzCards.kind_CardValue)
 			table.insert(tempHandPoker,g_phzCards.kind_CardValue)
-			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 2, tempHuxi)
+			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 2, tempHuxi,headcombi)
         end
     end
 end
 
-function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNum,tempHuxi)
+function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNum,tempHuxi,headcombi)
     local kindCombis = TingpaiLogic.combinationMarkTempList(markTempl, kindNum)
 
     local tingRet = {isCantihu = false, maxTihuxi = 0}
@@ -535,7 +614,7 @@ function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNu
 		for Q = 1, kindSize do
 			tempHandPoker[handSize - Q + 1] = kindCombis[j][Q]
         end
-        local tempRet = TingpaiLogic.getTingPaiList(tempHandPoker, res_ting_hu, tempHuxi)
+        local tempRet = TingpaiLogic.getTingPaiList(tempHandPoker, res_ting_hu, tempHuxi,headcombi)
         if tempRet.isCantihu == true then
             tingRet.isCantihu = true
             tingRet.maxTihuxi = tingRet.maxTihuxi > tempRet.maxTihuxi and tingRet.maxTihuxi or tempRet.maxTihuxi
@@ -765,7 +844,7 @@ function TingpaiLogic.getxiaoQingHuxi(xiaoQingPai)
 	return res
 end
 
-function TingpaiLogic.getchuTingPairByTwo(combi,resChu_ting,pubicHuxi)   --没跑起的情况下，手里会省2张牌做门子
+function TingpaiLogic.getchuTingPairByTwo(combi,resChu_ting,pubicHuxi,headcombi)   --没跑起的情况下，手里会省2张牌做门子
     if #combi ~= 2 then
 		print("getchuTingPairByTwo err")
 		return
@@ -779,10 +858,10 @@ function TingpaiLogic.getchuTingPairByTwo(combi,resChu_ting,pubicHuxi)   --没�
         type[i] = TingpaiLogic.getPaiType(combi[i])
 		value[i] = TingpaiLogic.getPaiValue(combi[i])
     end
-    TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 1, 2, pubicHuxi)
+    TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 1, 2, pubicHuxi,headcombi)
 end
 
-function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起来了，要一对将牌
+function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi,headcombi) --跑起来了，要一对将牌
     if (#combi ~= 4) then
 	
 		print("getchuTingPairByFour err\n")
@@ -798,10 +877,10 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起
 		value[i] = TingpaiLogic.getPaiValue(combi[i])
     end
 	if (type[1] == type[2] and value[1] == value[2]) then
-	    TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 3, 4, pubicHuxi)
+	    TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 3, 4, pubicHuxi,headcombi)
     end
 	if type[3] == type[4] and value[3] == value[4] then
-		TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 1, 2, pubicHuxi)
+		TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, 1, 2, pubicHuxi,headcombi)
     end
 
 	local indexValue =   --三张组合 打出一张单挑情况
@@ -813,11 +892,16 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起
 	}
     
 	local firstIndex
+    table.insert(headcombi,{0,0,0})
+    table.insert(headcombi,{0})
 	for  i = 1, #indexValue do
 	
 		if (TingpaiLogic.isVaildCombi({ combi[indexValue[i][1]],combi[indexValue[i][2]], combi[indexValue[i][3]] })) then
-		
-			--既然剩1张 就单钓呗
+            headcombi[#headcombi - 1][1] =  combi[indexValue[i][1]]
+            headcombi[#headcombi - 1][2] =  combi[indexValue[i][2]]
+            headcombi[#headcombi - 1][3] =  combi[indexValue[i][3]]
+            headcombi[#headcombi][1] =  combi[indexValue[i][4]]
+ 			--既然剩1张 就单钓呗
 			local tempHufen = 0
             if type[indexValue[i][1]] == type[indexValue[i][2]] and type[indexValue[i][2]] == type[indexValue[i][3]] then --这里考虑加胡系
                 if value[indexValue[i][1]] == 1 and value[indexValue[i][2]] == 2 and value[indexValue[i][3]] == 3 then
@@ -836,15 +920,22 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi) --跑起
 
             end
             firstIndex = indexValue[i][4]
-            TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex],pubicHuxi + tempHufen)
-			--resChu_ting[combi[firstIndex]] = pubicHuxi + tempHufen
+            TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex],pubicHuxi + tempHufen,headcombi)
 		end
     end
 end
 
-function TingpaiLogic.setTing_huValue(resChu_ting,ting,huxi)
-    if resChu_ting[ting] == nil or huxi > resChu_ting[ting] then
-        resChu_ting[ting] = huxi
+function TingpaiLogic.setTing_huValue(resChu_ting,ting,huxi,combi)
+    if resChu_ting[ting] == nil then
+        resChu_ting[ting] = {}
+        resChu_ting[ting][TingpaiLogic.resIndex.huxi] = huxi
+        resChu_ting[ting][TingpaiLogic.resIndex.combi] = {}
+        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(combi)
+    end
+
+    if huxi > resChu_ting[ting][TingpaiLogic.resIndex.huxi] then
+        resChu_ting[ting][TingpaiLogic.resIndex.huxi] = huxi
+        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(combi)
     end
 end
 --[[
@@ -855,17 +946,19 @@ end
     firstIndex，scondIndex combi的下标
     pubicHuxi：手中倾 和 笑 的胡息
 ]]
-function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex, scondIndex, pubicHuxi)
+function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex, scondIndex, pubicHuxi,headcombi)
+    local tempNewHeadCombi = table.clone(headcombi)
+    table.insert(tempNewHeadCombi,{combi[firstIndex],combi[scondIndex]})
     if combi[firstIndex] - combi[scondIndex] == -1 then
 		if (value[firstIndex] ~= 1) then
 			if (value[firstIndex] - 1 == 1) then                   --听的是1
                 if (type[firstIndex] == 1) then
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
                 else
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi + g_phzHuxi.b_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi + g_phzHuxi.b_chi,tempNewHeadCombi)
                 end
             else
-                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi)
+                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 1,pubicHuxi,headcombi,tempNewHeadCombi)
             end
         end
 
@@ -873,12 +966,12 @@ function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex
 		
 			if (value[scondIndex] + 1 == 3) then           --听的是3
 				if (type[scondIndex] == 1) then
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
                 else
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi + g_phzHuxi.b_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi + g_phzHuxi.b_chi,tempNewHeadCombi)
                 end
             else
-                TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi)
+                TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 1,pubicHuxi,tempNewHeadCombi)
             end
         end
 
@@ -886,23 +979,23 @@ function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex
 	
 		if (value[firstIndex] + 1 == 2) then                 --听的是2
             if (type[firstIndex] == 1) then
-                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi + g_phzHuxi.s_chi)
+                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
             else
-                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi + g_phzHuxi.b_chi)
+                TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi + g_phzHuxi.b_chi,tempNewHeadCombi)
             end
 		
 		else
-            TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi)
+            TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 1,pubicHuxi,tempNewHeadCombi)
         end
 	
 	elseif (value[firstIndex] == value[scondIndex]) then
-        TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 100,pubicHuxi)
-        TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 200,pubicHuxi)
+        TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 100,pubicHuxi,tempNewHeadCombi)
+        TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 200,pubicHuxi,tempNewHeadCombi)
         if type[firstIndex] == type[scondIndex] then
             if type[scondIndex] == 2 then 
-                TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 200,pubicHuxi + g_phzHuxi.b_xiao )
+                TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 200,pubicHuxi + g_phzHuxi.b_xiao ,tempNewHeadCombi)
             else        
-                TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 100,pubicHuxi + g_phzHuxi.s_xiao)
+                TingpaiLogic.setTing_huValue(resChu_ting,value[firstIndex] + 100,pubicHuxi + g_phzHuxi.s_xiao,tempNewHeadCombi)
             end 
         end
 	
@@ -911,25 +1004,25 @@ function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex
 		
 			if (value[firstIndex] == 2 and value[scondIndex] == 7) then
                 if (type[firstIndex] == 1) then
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 3,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 3,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
                 else
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 3,pubicHuxi + g_phzHuxi.b_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[scondIndex] + 3,pubicHuxi + g_phzHuxi.b_chi,tempNewHeadCombi)
                 end
             
 			elseif (value[firstIndex] == 2 and value[scondIndex] == 10) then
 			
 				if (type[firstIndex] == 1) then
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 5,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 5,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
 				else
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 5,pubicHuxi + g_phzHuxi.b_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] + 5,pubicHuxi + g_phzHuxi.b_chi,tempNewHeadCombi)
                 end
 			
 			elseif (value[firstIndex] == 7 and value[scondIndex] == 10) then
 			
 				if (type[firstIndex] == 1) then
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 5,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 5,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
 				else
-                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 5,pubicHuxi + g_phzHuxi.s_chi)
+                    TingpaiLogic.setTing_huValue(resChu_ting,combi[firstIndex] - 5,pubicHuxi + g_phzHuxi.s_chi,tempNewHeadCombi)
                 end
 			end
 		end
