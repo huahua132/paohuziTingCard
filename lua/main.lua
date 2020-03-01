@@ -26,7 +26,8 @@ function table.clone( object )
 end
 
 --local handpoker = {555,102,103,104,201,202,203,204,205,206,208,208,208,210,210,110,107,107,207,203}
-local handpoker = {555,555,108,108,108,107,107,207,207,201}
+--local handpoker = {555,555,108,108,108,107,107,207,207,201}
+local handpoker = {555,103,103,209,209,206,207,208,108,108,108}
 local ret_tingHu = {}
 
 local preTime = os.time()
