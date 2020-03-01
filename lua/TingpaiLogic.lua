@@ -1000,7 +1000,7 @@ end
     pubicHuxi：手中倾 和 笑 的胡息
 ]]
 function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex, scondIndex, pubicHuxi,headcombi)
-    local tempNewHeadCombi = table.clone(headcombi)
+    local tempNewHeadCombi = table.clone(headcombi) --python_hulue 本行做忽略 
     table.insert(tempNewHeadCombi,{combi[firstIndex],combi[scondIndex]})
     if combi[firstIndex] - combi[scondIndex] == -1 then
 		if (value[firstIndex] ~= 1) then
