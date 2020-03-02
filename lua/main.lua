@@ -50,9 +50,9 @@ end
 --local handpoker = {555,103,103,209,209,206,207,208,108,108,108}
 --local handpoker = {555,201,202,202,203,203,204,103,104,105,206,106,106,106,107,207,207,108,109,110}
 
---local handpoker = {102,109,104,108,107,206,204,108,555,555,555}
-local handpoker = randFapai(11,3)
 
+local handpoker = randFapai(20,4)
+local handpoker = {110,101,209,210,110,209,203,104,201,204,204,108,201,202,106,208,555,555,555,555}
 local ret_tingHu = {}
 print("handpokers:" .. table.concat(handpoker,','))
 local preTime = os.time()
@@ -61,9 +61,12 @@ local nowTime = os.time()
 
 --Debug(ret_tingHu)
  for tingpaiValue,item in pairs(ret_tingHu) do
+
      local logStr = "cards:"
-     for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
-         logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
+     if type(item[TingpaiLogic.resIndex.combi]) == "table" then
+         for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
+             logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
+         end
      end
      print(logStr .. "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi])
  end

@@ -48,7 +48,8 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
     local isCantihu = false --是否可以提胡
     local maxTihuxi = -1     --最大提胡胡系
     local tiHuCombi = {}     --提胡组合
-    local newHeadCombi = TingpaiLogic.GetNewconnectCombis(xiaoQiang,headcombi)
+    local newHeadCombi = {}
+    newHeadCombi = TingpaiLogic.GetNewconnectCombis(xiaoQiang,headcombi)  --python_zhushi
     table.sort( handPokers )
     local combis = {}
     if (#handPokers < 3) then
@@ -63,7 +64,8 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
         TingpaiLogic.kindPaiBuTiPai(_handPokers,res_ting_hu,xiaoQiang,kindNum,huxi,headcombi)
         for  i = 1, #combis do
             local lastIndex = #combis[i]
-            local tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
+            tempNewHeadCombi = {}
+            tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
             table.remove(tempNewHeadCombi,#tempNewHeadCombi)               --最后一组不是有效的
             if #combis[i][lastIndex] < kindNum * 2 then                                    
 				local tempHufen = TingpaiLogic.GetvalidCombiHufen(combis[i]) + xiaoQiangHuxi
@@ -982,17 +984,17 @@ function TingpaiLogic.getchuTingPairByFour(combi,resChu_ting,pubicHuxi,headcombi
     end
 end
 
-function TingpaiLogic.setTing_huValue(resChu_ting,ting,huxi,combi)
+function TingpaiLogic.setTing_huValue(resChu_ting,ting,huxi,headcombi)
     if resChu_ting[ting] == nil then
         resChu_ting[ting] = {}
         resChu_ting[ting][TingpaiLogic.resIndex.huxi] = huxi
         resChu_ting[ting][TingpaiLogic.resIndex.combi] = {}
-        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(combi)
+        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(headcombi)
     end
 
     if huxi > resChu_ting[ting][TingpaiLogic.resIndex.huxi] then
         resChu_ting[ting][TingpaiLogic.resIndex.huxi] = huxi
-        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(combi)
+        resChu_ting[ting][TingpaiLogic.resIndex.combi] = table.clone(headcombi)
     end
 end
 --[[
@@ -1004,7 +1006,8 @@ end
     pubicHuxi：手中倾 和 笑 的胡息
 ]]
 function TingpaiLogic.setChuTingCard(combi, resChu_ting, value, type, firstIndex, scondIndex, pubicHuxi,headcombi)
-    local tempNewHeadCombi = table.clone(headcombi) --python_hulue 本行做忽略 
+    local tempNewHeadCombi = {}
+    tempNewHeadCombi = table.clone(headcombi) --python_hulue 本行做忽略
     table.insert(tempNewHeadCombi,{combi[firstIndex],combi[scondIndex]})
     if combi[firstIndex] - combi[scondIndex] == -1 then
 		if (value[firstIndex] ~= 1) then
