@@ -26,13 +26,14 @@ g_phzHuxi.s_peng = 1
 g_phzHuxi.b_peng = 3
 g_phzHuxi.s_wei = 3
 g_phzHuxi.b_wei = 6
-
-function TingpaiLogic.getTingPaiRes(_handPokers,tihuFunc)
+--tihuFunc 用与牌桌 碰 喂 提胡听牌
+--tihuFuncParame3   tihuFunc需要用的参数
+function TingpaiLogic.getTingPaiRes(_handPokers,tihuFunc,tihuFunc,tihuFuncParame3)
     local res_ting_hu = {}
     local res = TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,0,{})
     if res.isCantihu == true then
-        if tihuFunc then
-            tihuFunc(res_ting_hu,res.huxi,res.tiHuCombi)
+        if type(tihuFunc) == "function" then
+            tihuFunc(res_ting_hu,res.huxi,res.tiHuCombi,tihuFuncParame3)
         end
     end
     return res_ting_hu
@@ -59,7 +60,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
 
     local markTempList = {}
     if kindNum > 0 then
-        TingpaiLogic.kindPaiBuTiPai(_handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
+        TingpaiLogic.kindPaiBuTiPai(_handPokers,res_ting_hu,xiaoQiang,kindNum,huxi,headcombi)
         for  i = 1, #combis do
             local lastIndex = #combis[i]
             local tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
@@ -151,7 +152,7 @@ function TingpaiLogic.GetNewconnectCombis(combione,combitwo)
     return tempCombi or {}
 end
 
-function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,huxi)
+function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,huxi,headcombi)
     if #xiaoQiang == 0 then
         return
     end
@@ -173,7 +174,7 @@ function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,hu
             temphandpokers[kindStartPos] = paivalue
             kindNum = kindNum - 1
             kindStartPos = kindStartPos + 1
-            TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi,{})
+            TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi,headcombi)
         end
     end
 
@@ -227,8 +228,8 @@ function TingpaiLogic.DTwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headc
     local maxKindTipai = 0
     for i,v in pairs(tempChuTing) do
         size = 1
-        if v >= maxTempHuxi then
-            maxTempHuxi = v
+        if v[TingpaiLogic.resIndex.huxi] > maxTempHuxi then
+            maxTempHuxi = v[TingpaiLogic.resIndex.huxi]
             maxKindTipai = i
         end
     end
@@ -285,7 +286,7 @@ function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,hea
         end
         table.insert(headcombi,{})
         table.insert(headcombi,{})
-        table.insert(headcombi,{})
+
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing1 = {} 
 			local tempChuTing2 = {}
@@ -299,41 +300,43 @@ function TingpaiLogic.DThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,hea
             local maxKindtiPai2 = 0
             for ting1,hu1 in pairs(tempChuTing1) do
                 size1 = 1
-                if hu1[TingpaiLogic.resIndex.huxi] >= maxTempHuxi1 then
-                    maxTempHuxi1 = hu1
+                if hu1[TingpaiLogic.resIndex.huxi] > maxTempHuxi1 then
+                    maxTempHuxi1 = hu1[TingpaiLogic.resIndex.huxi]
                     maxKindtiPai1 = ting1
                 end
             end
             for ting2,hu2 in pairs(tempChuTing2) do
                 size2 = 1
-                if hu2[TingpaiLogic.resIndex.huxi] >= maxTempHuxi2 then
-                    maxTempHuxi2 = hu2
+                if hu2[TingpaiLogic.resIndex.huxi] > maxTempHuxi2 then
+                    maxTempHuxi2 = hu2[TingpaiLogic.resIndex.huxi]
                     maxKindtiPai2 = ting2
                 end
             end
 
             if size1 > 0 and size2 > 0 then     --能解决2对
-                headcombi[#headcombi - 2] = table.sort({comb[1], comb[2],maxKindtiPai1})
-                headcombi[#headcombi - 1] = table.sort({comb[3], comb[4],maxKindtiPai2})
+                table.insert(headcombi,{})
+                headcombi[#headcombi - 2] = {handpokers[comb[1]], handpokers[comb[2]],maxKindtiPai1}
+                headcombi[#headcombi - 1] = {handpokers[comb[3]], handpokers[comb[4]],maxKindtiPai2}
                 for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
                     headcombi[#headcombi][1] = paiValue
                     TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type] + maxTempHuxi1 + maxTempHuxi2,headcombi)
                 end
+                table.remove(headcombi,#headcombi)
             end
-            table.remove(headcombi,#headcombi)
+
             if size1 > 0 then
-                headcombi[#headcombi - 1] = table.sort({comb[1], comb[2],maxKindtiPai1})
-                local temComs1 = {handpokers[comb[3]]}
-                local temComs2 = {handpokers[comb[4]]}
+                headcombi[#headcombi - 1] = {handpokers[comb[1]], handpokers[comb[2]],maxKindtiPai1}
+                local temComs1 = {handpokers[comb[4]]}
+                local temComs2 = {handpokers[comb[3]]}
                 headcombi[#headcombi] = {handpokers[comb[3]],handpokers[comb[3]]}
                 TingpaiLogic.SOneKindPaiTingRes(temComs1,res_ting_hu,tempHuxi,headcombi)
                 headcombi[#headcombi] = {handpokers[comb[4]],handpokers[comb[4]]}
                 TingpaiLogic.SneKindPaiTingRes(temComs2,res_ting_hu,tempHuxi,headcombi)
             end
 			if size2 > 0 then
-                headcombi[#headcombi - 1] = table.sort({comb[3], comb[4],maxKindtiPai2})
-                local temComs1 = {handpokers[comb[1]]}
-                local temComs2 = {handpokers[comb[2]]}
+                headcombi[#headcombi - 1] = {handpokers[comb[3]], handpokers[comb[4]],maxKindtiPai2}
+                local temComs1 = {handpokers[comb[2]]}
+                local temComs2 = {handpokers[comb[1]]}
                 headcombi[#headcombi] = {handpokers[comb[1]],handpokers[comb[1]]}
                 TingpaiLogic.SOneKindPaiTingRes(temComs1,res_ting_hu,tempHuxi,headcombi)
                 headcombi[#headcombi] = {handpokers[comb[2]],handpokers[comb[2]]}
@@ -374,12 +377,12 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,head
 			local tempChuTing = {}
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0)
             local size = 0
-            local maxTempHuxi = 0
+            local maxTempHuxi = -1
             local maxKindtiPai = 0
             for ting,hu in pairs(tempChuTing) do
                 size = 1
                 if hu[TingpaiLogic.resIndex.huxi] > maxTempHuxi then
-                    maxTempHuxi = hu
+                    maxTempHuxi = hu[TingpaiLogic.resIndex.huxi]
                     maxKindtiPai = ting
                 end
             end
@@ -497,12 +500,12 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headc
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing = {}
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0,{})
-            local maxTempHuxi = 0
+            local maxTempHuxi = -1
             local maxKindtiPai = 0
             local size = 0
             for ting,hu in pairs(tempChuTing) do
                 if hu[TingpaiLogic.resIndex.huxi] > maxTempHuxi then
-                    maxTempHuxi = hu
+                    maxTempHuxi = hu[TingpaiLogic.resIndex.huxi]
                     maxKindtiPai = ting
                 end
                 size = 1
@@ -534,17 +537,17 @@ function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,hea
         table.insert(type,TingpaiLogic.getPaiType(handpokers[i]))
         table.insert(value,TingpaiLogic.getPaiValue(handpokers[i]))
     end
-    table.insert(headcombi,{})
-    table.insert(headcombi,{})
     if handSise == 2 then
+        table.insert(headcombi,{})
+        table.insert(headcombi,{})
         local tempChuTing = {}
         TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, 1, 2, 0,{})
         local size = 0
         local maxTempHuxi = -1
         local maxKindtiPai = 0
         for ting,hu in pairs(tempChuTing) do
-            if hu > maxTempHuxi then
-                maxTempHuxi = hu
+            if hu[TingpaiLogic.resIndex.huxi] > maxTempHuxi then
+                maxTempHuxi = hu[TingpaiLogic.resIndex.huxi]
                 maxKindtiPai = ting
             end
             size = 1
@@ -653,6 +656,7 @@ function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNu
     local tingRet = {isCantihu = false, maxTihuxi = -1,tiHuCombi = {}}
     for k = 1, kindNum do
         table.insert(tempHandPoker,0)
+        local tingRet = {isCantihu = false, maxTihuxi = -1,tiHuCombi = {}}
     end
 	local handSize = #tempHandPoker
 	for j = 1, #kindCombis do
@@ -697,8 +701,8 @@ function TingpaiLogic.getmarkTempl(handpokers,kindNum)
         if kindNum > 1 then                                        --提
             markTempl[handpokers[i]] = 2
         end
+        markTempl[handpokers[i]] = markTempl[handpokers[i]] or 1
 		if (count == 2)	then									   -- 101 101 101
-			markTempl[handpokers[i]] = markTempl[handpokers[i]] or 1
         else
             if (type == 1 and pai_count[handpokers[i] + 100] == 1) then     -- 101 201 101 
                 markTempl[handpokers[i] + 100] = markTempl[handpokers[i] + 100] or 1
@@ -1332,8 +1336,8 @@ function TingpaiLogic.combinationZhuhe(sumList,nComLen,func)
     return retList
 end
 
-
-function TingpaiLogic.combinationZhuheList(pai_Count,sumList, nComLen,retList)
+--pai_Count 各个字牌数量用与过滤
+function TingpaiLogic.combinationZhuheList(pai_Count,sumList, nComLen,retList) --获取有效手牌路径
     nComLen = nComLen > #sumList and #sumList or nComLen
 	if nComLen == 0 then
 		return retList
@@ -1404,7 +1408,7 @@ function TingpaiLogic.combinationMarkTempList(sumList, nComLen)
 		return retList
     end
     local nSumIndex = {}
-
+    local key_value = {} --过滤重复组合
     for i = 1,nComLen+1 do
         nSumIndex[i] = i - 1
     end
@@ -1415,10 +1419,16 @@ function TingpaiLogic.combinationMarkTempList(sumList, nComLen)
     while nSumIndex[1] == 0 do
         if flag then
             local nSumCount = {}
+            local key = ""
             for i = 2,nComLen+1 do
                 nSumCount[i - 1] = sumList[nSumIndex[i]]
+                key = key .. sumList[nSumIndex[i]]
             end
-            table.insert( retList,nSumCount)
+            if key_value[key] == nil then
+                table.insert( retList,nSumCount)
+                key_value[key] = 1
+            end
+
             flag = false
         end
 
