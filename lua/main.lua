@@ -1,29 +1,10 @@
 
 package.path = package.path ..';..\\?.lua'
 require 'TingpaiLogic'
+require 'functions'
 --print(package.path)
 
--- @param object 要克隆的值
--- @return objectCopy 返回值的副本
---]]
-function table.clone( object )
-    local lookup_table = {}
-    local function copyObj( object )
-        if type( object ) ~= "table" then
-            return object
-        elseif lookup_table[object] then
-            return lookup_table[object]
-        end
 
-        local new_table = {}
-        lookup_table[object] = new_table
-        for key, value in pairs( object ) do
-            new_table[copyObj( key )] = copyObj( value )
-        end
-        return setmetatable( new_table, getmetatable( object ) )
-    end
-    return copyObj( object )
-end
 
 local paiLib =
 {
@@ -75,15 +56,27 @@ local preTime = os.time()
 ret_tingHu = TingpaiLogic.getTingPaiRes(handpoker)
 local nowTime = os.time()
 
-for tingpaiValue,item in pairs(ret_tingHu) do
-    local logStr = "cards:"
-    for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
-        logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
-    end
-    print(logStr .. "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi])
-end
+Debug(ret_tingHu)
+-- for tingpaiValue,item in pairs(ret_tingHu) do
+--     local logStr = "cards:"
+--     for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
+--         logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
+--     end
+--     print(logStr .. "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi])
+-- end
 
 print("user time :" .. nowTime - preTime)
-
+print("handpokers:" .. table.concat(handpoker,','))
 --有错误的用例贴这
 --handpokers:209,210,110,104,201,110,105,208,555,555,555
+--handpokers:206,206,206,205,105,206,207,102,555,555,555
+--handpokers:103,102,104,204,104,203,110,103,555,555,555
+--handpokers:206,104,106,202,206,105,210,103,555,555,555
+--handpokers:109,209,203,105,106,103,203,209,555,555,555
+--handpokers:201,202,203,208,208,104,102,204,555,555,555
+--handpokers:101,106,201,202,206,102,101,202,555,555,555
+--handpokers:210,207,209,109,209,206,202,107,555,555,555 组合里面有空表 
+--handpokers:202,108,108,204,105,106,108,207,555,555,555 组合里面有空表
+--handpokers:202,102,104,109,209,204,106,104,555,555,555 组合里面有空表
+--handpokers:101,110,110,101,210,203,209,209,555,555,555 组合里面有空表
+--handpokers:102,109,104,108,107,206,204,108,555,555,555 组合里面有空表
