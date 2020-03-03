@@ -116,7 +116,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
                 if combi[#combi][1] == combi[#combi][2] and #xiaoQiang >= 1 then --做将提胡的情况 网友新加
                     res.isCantihu = true
                     if tempHufen > res.maxTempHuxi then
-                        res.maxTihuxi = tempHufen
+                        res.maxTempHuxi = tempHufen
                         table.insert(tempNewHeadCombi,{combi[#combi][1],combi[#combi][1]})
                         res.tiHuCombi = tempNewHeadCombi
                     end
@@ -187,6 +187,9 @@ function TingpaiLogic.kindPaiBuTiPai(handPokers,res_ting_hu,xiaoQiang,kindNum,hu
             kindStartPos = kindStartPos + 1
             local tempRet = TingpaiLogic.getTingPaiList(temphandpokers,res_ting_hu,huxi,headcombi)
             TingpaiLogic.updateTingPaiResStruct(res,tempRet)
+            if tempRet.isCanTing == false then    --如果一个王替一个提不能胡替2个肯定也不行了
+                break
+            end
         end
     end
     return res
@@ -672,7 +675,7 @@ function TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,head
 			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum - 2, tempHuxi,headcombi)
         end
     end
-    return newTingPaiResStruct()
+    return TingpaiLogic.newTingPaiResStruct()
 end
 
 function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNum,tempHuxi,headcombi)
