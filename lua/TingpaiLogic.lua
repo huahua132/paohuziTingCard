@@ -78,16 +78,13 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
                         tiHuCombi = tempRet.tiHuCombi
                     end
                 end
-            elseif #combis[i][lastIndex] <= kindNum * 2 + 2 then
-                markTempList = TingpaiLogic.getmarkTempl(combis[i][lastIndex],kindNum)
-                if #markTempList >= kindNum then
-                   local tempRet = TingpaiLogic.markDnfTingCard(markTempList,combis[i][lastIndex],res_ting_hu,kindNum,xiaoQiangHuxi,tempNewHeadCombi)
-                    if tempRet.isCantihu == true then
-                        isCantihu = true
-                        if tempRet.maxTihuxi > maxTihuxi then
-                            maxTihuxi = tempRet.maxTihuxi
-                            tiHuCombi = tempRet.tiHuCombi
-                        end
+            elseif #combis[i][lastIndex] <= kindNum * 2 + 4 then
+               local tempRet = TingpaiLogic.replaceKindPaiDnfTingpai(combis[i][lastIndex],res_ting_hu,kindNum,xiaoQiangHuxi,tempNewHeadCombi)
+                if tempRet.isCantihu == true then
+                    isCantihu = true
+                    if tempRet.maxTihuxi > maxTihuxi then
+                        maxTihuxi = tempRet.maxTihuxi
+                        tiHuCombi = tempRet.tiHuCombi
                     end
                 end
             end
@@ -404,7 +401,7 @@ function TingpaiLogic.DFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,head
     elseif handSize == 6 then
         local kindNum = 3
 		local tempHandPoker = table.clone(handpokers)
-		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker,kindNum)
+		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
         if #markTempl >= kindNum then
             table.insert(tempHandPoker,g_phzCards.kind_CardValue)
 			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
@@ -573,11 +570,11 @@ function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,hea
 
         if tempTypeHuxi[type[1]] > tempTypeHuxi[type[2]] then
             headcombi[#headcombi] = {handpokers[1],handpokers[1],handpokers[1]}
-            table.insert(headcombi,{tempHand1,tempHand1})
+            table.insert(headcombi,{handpokers[2],handpokers[2]})
             maxTempHuxi = tempTypeHuxi[type[1]]
         else
             headcombi[#headcombi] = {handpokers[2],handpokers[2],handpokers[2]}
-            table.insert(headcombi,{tempHand2,tempHand2})
+            table.insert(headcombi,{handpokers[1],handpokers[1]})
             maxTempHuxi = tempTypeHuxi[type[2]]
         end
         return {isCantihu = true, maxTihuxi = tempHuxi + maxTempHuxi,tiHuCombi = headcombi}
@@ -585,7 +582,7 @@ function TingpaiLogic.SThreeKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,hea
     elseif handSise == 5 then
         local kindNum = 2
 		local tempHandPoker = table.clone(handpokers)
-		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker,kindNum)
+		local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
 		if (#markTempl >= kindNum) then
             table.insert(tempHandPoker,g_phzCards.kind_CardValue)
 			return TingpaiLogic.markDnfTingCard(markTempl, tempHandPoker, res_ting_hu, kindNum, tempHuxi,headcombi)
@@ -608,7 +605,7 @@ function TingpaiLogic.SFourKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,head
     end
 
     local tempHandPoker = table.clone(handpokers)
-    local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker,4)
+    local markTempl = TingpaiLogic.getmarkTempl(tempHandPoker)
     
     if handSise == 1 then
         table.insert(headcombi,{g_phzCards.kind_CardValue,g_phzCards.kind_CardValue,g_phzCards.kind_CardValue})
@@ -658,7 +655,6 @@ function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNu
     local tingRet = {isCantihu = false, maxTihuxi = -1,tiHuCombi = {}}
     for k = 1, kindNum do
         table.insert(tempHandPoker,0)
-        local tingRet = {isCantihu = false, maxTihuxi = -1,tiHuCombi = {}}
     end
 	local handSize = #tempHandPoker
 	for j = 1, #kindCombis do
@@ -678,7 +674,62 @@ function TingpaiLogic.markDnfTingCard(markTempl,tempHandPoker,res_ting_hu,kindNu
     return tingRet
 end
 
-function TingpaiLogic.getmarkTempl(handpokers,kindNum)
+function TingpaiLogic.replaceKindPaiDnfTingpai(handpokers,res_ting_hu,kindNum,tempHuxi,headcombi)
+    local markTempList = TingpaiLogic.getmarkTempl(handpokers)
+    local tempHandPoker = table.clone(handpokers)
+    local tingRet = {isCantihu = false, maxTihuxi = -1,tiHuCombi = {}}
+    local kindCombis = {}
+    if #markTempList >= kindNum then
+        kindCombis = TingpaiLogic.combinationMarkTempList(markTempList, kindNum)
+    end
+
+    for k = 1, kindNum do
+        table.insert(tempHandPoker,0)
+    end
+
+    if #kindCombis > 0 then
+        local handSize = #tempHandPoker
+        for j = 1, #kindCombis do
+            local kindSize = #kindCombis[j]
+            for Q = 1, kindSize do
+                tempHandPoker[handSize - Q + 1] = kindCombis[j][Q]
+            end
+            local tempRet = TingpaiLogic.getTingPaiList(tempHandPoker, res_ting_hu, tempHuxi,headcombi)
+            if tempRet.isCantihu == true then
+                tingRet.isCantihu = true
+                if tempRet.maxTihuxi > tingRet.maxTihuxi then
+                    tingRet.maxTihuxi = tempRet.maxTihuxi
+                    tingRet.tiHuCombi = tempRet.tiHuCombi
+                end
+            end
+        end
+    end
+
+    if kindNum > 1 then
+        local handSize = #tempHandPoker
+        for j = 1, #handpokers do
+            local kindSize = 2
+            for Q = 1, kindSize do
+                tempHandPoker[handSize - Q + 1] = tempHandPoker[j]
+            end
+            for kStart = kindSize + 1,kindNum do
+                tempHandPoker[handSize - kStart + 1] = g_phzCards.kind_CardValue
+            end
+            local tempRet = TingpaiLogic.getTingPaiList(tempHandPoker, res_ting_hu, tempHuxi,headcombi)
+            if tempRet.isCantihu == true then
+                tingRet.isCantihu = true
+                if tempRet.maxTihuxi > tingRet.maxTihuxi then
+                    tingRet.maxTihuxi = tempRet.maxTihuxi
+                    tingRet.tiHuCombi = tempRet.tiHuCombi
+                end
+            end
+        end
+    end
+
+    return tingRet
+end
+
+function TingpaiLogic.getmarkTempl(handpokers)
     local markTempl = {}
 	local pai_count = {}
     local possibilityHus = {}
@@ -700,159 +751,153 @@ function TingpaiLogic.getmarkTempl(handpokers,kindNum)
 		type = TingpaiLogic.getPaiType(handpokers[i])
 		value = TingpaiLogic.getPaiValue(handpokers[i])
 		count = pai_count[handpokers[i]]
-        if kindNum > 1 then                                        --提
-            markTempl[handpokers[i]] = 2
-        end
-        markTempl[handpokers[i]] = markTempl[handpokers[i]] or 1
 		if (count == 2)	then									   -- 101 101 101
+            markTempl[handpokers[i]] = 1
         else
             if (type == 1 and pai_count[handpokers[i] + 100] == 1) then     -- 101 201 101 
-                markTempl[handpokers[i] + 100] = markTempl[handpokers[i] + 100] or 1
+                markTempl[handpokers[i] + 100] = 1
             elseif (type == 2 and pai_count[handpokers[i] - 100] == 1) then-- 101 201 201
-                markTempl[handpokers[i] - 100] = markTempl[handpokers[i] - 100] or 1
+                markTempl[handpokers[i] - 100] = 1
             end
 
             if (value == 1) then
             
                 if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 3] == nil) then--101 102 补 103
 
-                    markTempl[type * 100 + 3] = markTempl[type * 100 + 3] or 1
+                    markTempl[type * 100 + 3] = 1
                 
                 elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 2] == nil) then--101 103 补 102
                 
-                    markTempl[type * 100 + 2] = markTempl[type * 100 + 2] or 1
+                    markTempl[type * 100 + 2] = 1
                 end
             
             elseif (value == 2) then
             
                 if (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 10] == nil) then -- 2 7 补 10
                 
-                    markTempl[type * 100 + 10] = markTempl[type * 100 + 10] or 1
+                    markTempl[type * 100 + 10] = 1
                 
                 elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 7] == nil) then -- 2 10 补 7
                 
-                    markTempl[type * 100 + 7] = markTempl[type * 100 + 7] or 1
+                    markTempl[type * 100 + 7] = 1
                 
                 elseif (pai_count[type * 100 + 1] == 1 and pai_count[type * 100 + 3] == nil) then -- 2 1 补 3
                 
-                    markTempl[type * 100 + 3] = markTempl[type * 100 + 3] or 1
+                    markTempl[type * 100 + 3] = 1
                 
                 elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 1] == nil) then -- 2 3 补 1
                 
-                    markTempl[type * 100 + 1] =  markTempl[type * 100 + 1] or 1
+                    markTempl[type * 100 + 1] = 1
                 
                 elseif (pai_count[type * 100 + 3] == 1 and pai_count[type * 100 + 4] == nil) then -- 2 3 补 4
                 
-                    markTempl[type * 100 + 4] = markTempl[type * 100 + 4] or 1
+                    markTempl[type * 100 + 4] = 1
                 
                 elseif (pai_count[type * 100 + 4] == 1 and pai_count[type * 100 + 3] == nil) then -- 2 4 补 3
                 
-                    markTempl[type * 100 + 3] = markTempl[type * 100 + 3] or 1
+                    markTempl[type * 100 + 3] = 1
                 end
         
             elseif (value == 7) then
             
                 if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 10] == nil) then -- 7 2 补 10
                 
-                    markTempl[type * 100 + 10] = markTempl[type * 100 + 10] or 1
+                    markTempl[type * 100 + 10] = 1
                 
                 elseif (pai_count[type * 100 + 10] == 1 and pai_count[type * 100 + 2] == nil) then -- 7 10 补 2
                 
-                    markTempl[type * 100 + 2] = markTempl[type * 100 + 2] or 1
+                    markTempl[type * 100 + 2] = 1
                 
                 elseif (pai_count[type * 100 + 5] == 1 and pai_count[type * 100 + 6] == nil) then -- 7 5 补 6
                 
-                    markTempl[type * 100 + 6] = markTempl[type * 100 + 6] or 1
+                    markTempl[type * 100 + 6] = 1
                 
                 elseif (pai_count[type * 100 + 6] == 1 and pai_count[type * 100 + 5] == nil) then -- 7 6 补 5
 
-                    markTempl[type * 100 + 5] = markTempl[type * 100 + 5] or 1
+                    markTempl[type * 100 + 5] = 1
 
                 elseif (pai_count[type * 100 + 6] == 1 and pai_count[type * 100 + 8] == nil) then -- 7 6 补 8
 
-                    markTempl[type * 100 + 8] = markTempl[type * 100 + 8] or 1
+                    markTempl[type * 100 + 8] = 1
 
                 elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 6] == nil) then -- 7 8 补 6
 
-                    markTempl[type * 100 + 6] = markTempl[type * 100 + 6] or 1
+                    markTempl[type * 100 + 6] = 1
                 
                 elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then -- 7 8 补 9
                 
-                    markTempl[type * 100 + 9] = markTempl[type * 100 + 9] or 1
+                    markTempl[type * 100 + 9] = 1
                 
                 elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then -- 7 9 补 8
                 
-                    markTempl[type * 100 + 8] = markTempl[type * 100 + 8] or 1
+                    markTempl[type * 100 + 8] = 1
                 end
             
             elseif (value == 9) then
             
                 if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then --9 7 补 8
                 
-                    markTempl[handpokers[i] - 1] = markTempl[handpokers[i] - 1] or  1
+                    markTempl[handpokers[i] - 1] = 1
 
                 elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then -- 9 8 补 7
                 
-                    markTempl[handpokers[i] - 2] =  markTempl[handpokers[i] - 2] or 1
+                    markTempl[handpokers[i] - 2] = 1
                 
                 elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 9 8 补 10
                 
-                    markTempl[handpokers[i] + 1] = markTempl[handpokers[i] + 1] or 1
+                    markTempl[handpokers[i] + 1] = 1
                 end
             
             elseif (value == 10) then
             
                 if (pai_count[type * 100 + 2] == 1 and pai_count[type * 100 + 7] == nil) then -- 10 2 补 7
                 
-                    markTempl[type * 100 + 7] = markTempl[type * 100 + 7] or 1
+                    markTempl[type * 100 + 7] = 1
                 
                 elseif (pai_count[type * 100 + 7] == 1 and pai_count[type * 100 + 2] == nil) then -- 10 7 补 2
                 
-                    markTempl[type * 100 + 2] = markTempl[type * 100 + 2] or 1
+                    markTempl[type * 100 + 2] = 1
                 
                 elseif (pai_count[type * 100 + 8] == 1 and pai_count[type * 100 + 9] == nil) then -- 10 8 补 9
                 
-                    markTempl[type * 100 + 9] = markTempl[type * 100 + 9] or 1
+                    markTempl[type * 100 + 9] = 1
                 
                 elseif (pai_count[type * 100 + 9] == 1 and pai_count[type * 100 + 8] == nil) then -- 10 9 补 8
                 
-                    markTempl[type * 100 + 8] = markTempl[type * 100 + 8] or 1
+                    markTempl[type * 100 + 8] = 1
                 end
             
             else
                 --假设value == 6
                 if (pai_count[handpokers[i] - 2] == 1 and pai_count[handpokers[i] - 1] == nil) then --6 4 补 5
                 
-                    markTempl[handpokers[i] - 1] = markTempl[handpokers[i] - 1] or 1
+                    markTempl[handpokers[i] - 1] = 1
                 
                 elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] - 2] == nil) then -- 6 5 补 4
                 
-                    markTempl[handpokers[i] - 2] = markTempl[handpokers[i] - 2] or 1
+                    markTempl[handpokers[i] - 2] = 1
 
                 elseif (pai_count[handpokers[i] - 1] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 6 5 补 7
 
-                    markTempl[handpokers[i] + 1] = markTempl[handpokers[i] + 1] or 1
+                    markTempl[handpokers[i] + 1] = 1
 
                 elseif (pai_count[handpokers[i] + 1] == 1 and pai_count[handpokers[i] - 1] == nil) then -- 6 7 补 5
 
-                    markTempl[handpokers[i] - 1] = markTempl[handpokers[i] - 1] or 1
+                    markTempl[handpokers[i] - 1] = 1
                 
                 elseif (pai_count[handpokers[i] + 2] == 1 and pai_count[handpokers[i] + 1] == nil) then -- 6 8 补 7
                 
-                    markTempl[handpokers[i] + 1] = markTempl[handpokers[i] + 1] or 1
+                    markTempl[handpokers[i] + 1] = 1
                 
                 elseif (pai_count[handpokers[i] + 1] == 1 and pai_count[handpokers[i] + 2] == nil) then -- 6 7 补 8
                 
-                    markTempl[handpokers[i] + 2] = markTempl[handpokers[i] + 2] or 1
+                    markTempl[handpokers[i] + 2] = 1
                 end
             end
         end
 	end
 
 	for cardValue,count in pairs(markTempl) do
-        if count == 2 then
-            table.insert(possibilityHus,cardValue)
-        end
         table.insert(possibilityHus,cardValue)
     end
 	return possibilityHus
@@ -1411,7 +1456,6 @@ function TingpaiLogic.combinationMarkTempList(sumList, nComLen)
 		return retList
     end
     local nSumIndex = {}
-    local key_value = {} --过滤重复组合
     for i = 1,nComLen+1 do
         nSumIndex[i] = i - 1
     end
@@ -1427,10 +1471,8 @@ function TingpaiLogic.combinationMarkTempList(sumList, nComLen)
                 nSumCount[i - 1] = sumList[nSumIndex[i]]
                 key = key .. sumList[nSumIndex[i]]
             end
-            if key_value[key] == nil then
-                table.insert( retList,nSumCount)
-                key_value[key] = 1
-            end
+
+            table.insert( retList,nSumCount)
 
             flag = false
         end
