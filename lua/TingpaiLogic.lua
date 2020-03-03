@@ -82,7 +82,7 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
         TingpaiLogic.updateTingPaiResStruct(res,tempRet)
         for  i = 1, #combis do
             local lastIndex = #combis[i]
-            tempNewHeadCombi = {}
+            local tempNewHeadCombi = {}
             tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
             table.remove(tempNewHeadCombi,#tempNewHeadCombi)               --最后一组不是有效的
             if #combis[i][lastIndex] < kindNum * 2 then                                    
@@ -509,7 +509,7 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headc
             headcombi[#headcombi][2] = paiValue
             TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi + tempTypeHuxi[type],headcombi)
         end
-        return { isCanTing = true,isCantihu = true, maxTempHuxi = tempHuxi,headcombi }
+        return { isCanTing = true,isCantihu = true, maxTempHuxi = tempHuxi,tiHuCombi = headcombi }
     elseif handSize == 3 then
         local indexValue =  --三张组合 打出一张单挑情况
 		{
@@ -524,7 +524,7 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headc
 			type[i] = TingpaiLogic.getPaiType(handpokers[i])
 			value[i] = TingpaiLogic.getPaiValue(handpokers[i])
         end
-
+        table.insert(headcombi,{})
 		for i,comb in ipairs(indexValue) do
 			local tempChuTing = {}
             TingpaiLogic.setChuTingCard(handpokers, tempChuTing, value, type, comb[1], comb[2], 0,{})
@@ -540,7 +540,7 @@ function TingpaiLogic.STwoKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headc
             end
 
 			if (size > 0) then
-                table.insert(headcombi,{handpokers[comb[1]], handpokers[comb[2]],maxKindtiPai})
+                headcombi[#headcombi] = {handpokers[comb[1]], handpokers[comb[2]],maxKindtiPai}
 				local temp ={ handpokers[comb[3]] }
 				local tempRet = TingpaiLogic.SOneKindPaiTingRes(temp, res_ting_hu, tempHuxi + maxTempHuxi,headcombi)
                 TingpaiLogic.updateTingPaiResStruct(res,tempRet)
