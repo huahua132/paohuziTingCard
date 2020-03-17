@@ -67,7 +67,6 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
     local res = TingpaiLogic.newTingPaiResStruct()
     local newHeadCombi = {}
     newHeadCombi = TingpaiLogic.GetNewconnectCombis(xiaoQiang,headcombi)  --python_zhushi
-    table.sort( handPokers )
     local combis = {}
     if (#handPokers < 3) then
         combis[#combis + 1] = {}
@@ -101,15 +100,6 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
             local tempNewHeadCombi = TingpaiLogic.GetNewconnectCombis(newHeadCombi,combis[i])
             table.remove(tempNewHeadCombi,#tempNewHeadCombi)               --最后一组不是有效的
             tempHufen = TingpaiLogic.GetvalidCombiHufen(combi) + xiaoQiangHuxi
-            --[[local logStr = ""
-            for  i = 1, #combi do              --最后一组不是有效组合
-                logStr = logStr .. "["
-                for  LOOP = 1, #combi[i] do
-                    logStr = logStr .. combi[i][LOOP] .. " "
-                end
-                logStr = logStr .. "]  "
-            end
-            print(logStr)]]
             if #combi[#combi] == 2 then
                 local tempisCanTing = TingpaiLogic.getchuTingPairByTwo(combi[#combi], res_ting_hu, tempHufen,tempNewHeadCombi)
                 res.isCanTing = res.isCanTing or tempisCanTing
@@ -222,7 +212,9 @@ function TingpaiLogic.getKindPai_ting_hu(handpokers,res_ting_hu, kindNum, tempHu
 end
 
 function TingpaiLogic.DOneKindPaiTingRes(handpokers, res_ting_hu, tempHuxi,headcombi)
+    headcombi[#headcombi + 1] = {}
     for i,paiValue in ipairs(TingpaiLogic.AllPaiValue) do
+        headcombi[#headcombi] = {paiValue}
         TingpaiLogic.setTing_huValue(res_ting_hu, paiValue, tempHuxi,headcombi)
     end
     local res = TingpaiLogic.newTingPaiResStruct()
@@ -1212,7 +1204,6 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
 	local left = 1
 	local right = #_handpokers
 	local delStartIndex = 0
-	local tmpPaicount = 0
 	while (left <= right) do
 		if _handpokers[left] ~= tempVal or paiCount == 4 then
             if paiCount >= 3 then
@@ -1221,15 +1212,10 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
                 left = left - paiCount
 				tmpPaicount = paiCount
                 while paiCount > 0 do
-                    _handpokers[delStartIndex], _handpokers[right] = _handpokers[right],_handpokers[delStartIndex]
+                    table.insert(res[#res],_handpokers[delStartIndex])
+                    table.remove(_handpokers,delStartIndex)
                     paiCount = paiCount - 1
                     right = right - 1
-                    delStartIndex = delStartIndex + 1
-                end
-				while tmpPaicount > 0 do
-                    res[#res][#res[#res] + 1] = _handpokers[#_handpokers]
-                    table.remove(_handpokers,#_handpokers)
-                    tmpPaicount = tmpPaicount - 1
                 end
             end
 			tempVal = _handpokers[left]
@@ -1253,6 +1239,60 @@ function TingpaiLogic.resolvexiaoQingPai(_handpokers)
 	return res
 end
 
+function TingpaiLogic.getValidComByHandpokers(handpokers)
+	local pai_count = {}
+	local retComs = {}
+	for i,paiValue in ipairs(handpokers) do
+        if pai_count[paiValue] == nil then
+            pai_count[paiValue] = 1
+        else
+            pai_count[paiValue] = pai_count[paiValue] + 1
+        end
+    end
+	local prePaivalue = 0
+	for i,paiValue in ipairs(handpokers) do
+		if prePaivalue ~= paiValue then
+            prePaivalue = paiValue;
+            if (TingpaiLogic.getPaiValue(paiValue) == 2) then     --二七十
+            
+                if (pai_count[paiValue] == 2 and pai_count[paiValue + 5] == 2 and pai_count[paiValue + 8] == 2) then
+                    table.insert(retComs,{ paiValue, paiValue + 5, paiValue + 8})
+                end
+
+                if (pai_count[paiValue + 5] and pai_count[paiValue + 5] >= 1 and pai_count[paiValue + 8] and pai_count[paiValue + 8] >= 1) then
+                    table.insert(retComs,{ paiValue, paiValue + 5, paiValue + 8})
+                end
+            end
+
+            --顺子
+            if (pai_count[paiValue] == 2) then
+            
+                local type = TingpaiLogic.getPaiType(paiValue);         --壹壹一
+                if (type == 1) then
+                    if (pai_count[paiValue + 100] and pai_count[paiValue + 100] > 0) then
+                        table.insert(retComs,{ paiValue, paiValue, paiValue + 100})
+                    end
+                else
+                
+                    if (pai_count[paiValue - 100] and pai_count[paiValue - 100] > 0) then
+                        table.insert(retComs,{ paiValue, paiValue, paiValue - 100})
+                    end
+                end
+
+                if (pai_count[paiValue + 1] == 2 and pai_count[paiValue + 2] == 2) then
+                    table.insert(retComs,{ paiValue, paiValue + 1, paiValue + 2})
+                end
+            end
+
+            if (pai_count[paiValue + 1] and pai_count[paiValue + 1] >= 1 and pai_count[paiValue + 2] and pai_count[paiValue + 2] >= 1) then
+                table.insert(retComs,{ paiValue, paiValue + 1, paiValue + 2})
+            end
+        end
+	end
+	return retComs
+end
+
+
 function TingpaiLogic.getAllCardCombi(handPokers,kindNum)
     local comsize = math.floor( (#handPokers + kindNum) / 3 ) - 1
     local tempNum = 1
@@ -1261,7 +1301,7 @@ function TingpaiLogic.getAllCardCombi(handPokers,kindNum)
         tempNum = 0
     end
     comsize = comsize - kindNum
-    local vaildcombis = TingpaiLogic.combinationZhuhe(handPokers,3,TingpaiLogic.isVaildCombi)
+    local vaildcombis = TingpaiLogic.getValidComByHandpokers(handPokers)--TingpaiLogic.combinationZhuhe(handPokers,3,TingpaiLogic.isVaildCombi)
 
     local tempcombss = {}
 
@@ -1280,7 +1320,6 @@ function TingpaiLogic.getAllCardCombi(handPokers,kindNum)
         if #vaildcombis >= i then
             TingpaiLogic.combinationZhuheList(pai_count,vaildcombis, i,tempcombss)
         end
-        --if #tempcombss > 10 then break end
     end
 
     for i,combis in ipairs(tempcombss) do
@@ -1348,76 +1387,6 @@ function TingpaiLogic.isVaildCombi(combi)
     end
 
 	return false
-end
-
-function TingpaiLogic.combinationZhuhe(sumList,nComLen,func)
-    local retList = {}
-    nComLen = nComLen > #sumList and #sumList or nComLen
-	if nComLen == 0 then
-		return retList
-    end
-    local pai_count = {}
-    local key_value = {}
-    for i,v in ipairs(sumList) do
-        if pai_count[v] == nil then
-            pai_count[v] = 1
-        else
-            pai_count[v] = pai_count[v] + 1
-        end
-    end
-
-    local nSumIndex = {}
-
-    for i = 1,nComLen+1 do
-        nSumIndex[i] = i - 1
-    end
-
-    local flag = true
-    local nPos = nComLen + 1
-
-    while nSumIndex[1] == 0 do
-        if flag then
-            local nSumCount = {}
-            local key = ""
-            for i = 2,nComLen+1 do
-                nSumCount[i - 1] = sumList[nSumIndex[i]]
-                key = key .. sumList[nSumIndex[i]]
-            end
-            if func == nil or func(nSumCount) == true then
-                
-                if key_value[key] == nil then
-                    key_value[key] = 1
-                    retList[#retList + 1] = nSumCount
-                elseif key_value[key] == 1 then
-                    if nSumCount[1] % 100 ~= nSumCount[2] % 100 and pai_count[nSumCount[1]] == 2 and pai_count[nSumCount[2]] == 2 and pai_count[nSumCount[3]] == 2 then
-						key_value[key] = 2
-                        retList[#retList + 1] = nSumCount
-					end
-                end
-            end
-            flag = false
-        end
-
-        local isContinue = false
-        nSumIndex[nPos] = nSumIndex[nPos] + 1
-        if nSumIndex[nPos] > #sumList then
-            nSumIndex[nPos] = 0
-            nPos = nPos - 1
-            isContinue = true
-        end
-
-        if isContinue == false and nPos < nComLen + 1 then
-            nPos = nPos + 1
-            nSumIndex[nPos] = nSumIndex[nPos - 1]
-            isContinue = true
-        end
-
-        if isContinue == false and nPos == nComLen + 1 then
-            flag = true
-        end
-    end
-
-    return retList
 end
 
 --pai_Count 各个字牌数量用与过滤

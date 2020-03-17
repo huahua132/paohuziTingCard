@@ -61,6 +61,8 @@ static const vector<int> AllPaiValue
 
 int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu, const int& huxi);
 void markDnfTingCard(const vector<int>& markTempl, vector<int> tempHandPoker, map<int, int>& res_ting_hu, const int& kindNum, const int&tempHuxi);
+int getPaiType(const int& paiNum);
+int getPaiValue(const int& paiNum);
 
 static const int kindpai = 555;              //王赖牌
 
@@ -69,20 +71,13 @@ int getCountAndDelByhand(vector<int>& handpokers, const int& paiVal)
 	int res = 0;
 
 	int left = 0;
-	size_t right = handpokers.size() - 1;
+	int right = (int)handpokers.size() - 1;
 
 	while (left <= right)
 	{
-		if (handpokers[left] == paiVal)
-		{
-			swap(handpokers[left], handpokers[right--]);
-			handpokers.pop_back();
-			res++;
-			--left;
-			if (left > right)
-				break;
-		}
-		++left;
+		if (handpokers[right--] != paiVal)break;
+		handpokers.pop_back();
+		res++;
 	}
 
 	return res;
@@ -96,79 +91,59 @@ void Setres_ting_hu(map<int, int>& ting_hu, const int& ting, const int& huxi)
 	}
 }
 
-
-vector<vector<int>> combination(const vector<int>& pSum, size_t nCombiLen, bool(*call_back)(const vector<int>&))
+vector<vector<int>> getValidComByHandpokers(const vector<int>& handpokers)
 {
-	size_t nSumLen = pSum.size();
-	unordered_map<int, int> pai_count;         //过滤没必要的重复
-	for (int i = 0; i < pSum.size(); i++)
+	unordered_map<int, int> pai_count;
+	vector<vector<int>> retComs;
+	for (auto& paiValue : handpokers)
 	{
-		pai_count[pSum[i]]++;
+		pai_count[paiValue]++;
 	}
-	nCombiLen = nCombiLen > nSumLen ? nSumLen : nCombiLen;
-	vector<int> nSumIndex(nCombiLen + 1, 0);
-	vector<int> nSumCount(nCombiLen);
-	unordered_map<string, int> key_value;
-	vector<vector<int>> res;
-	for (int i = 0; i < nCombiLen + 1; i++)  // 0 1 2 3 4 ...nCombiLen
-	{										 //-1 0 1 2 3 ...nCombiLen - 1
-		nSumIndex[i] = i - 1;
-	}
-
-	bool flag = true;
-	size_t nPos = nCombiLen;
-	while (nSumIndex[0] == -1)
+	int prePaivalue = 0;
+	for (auto& paiValue : handpokers)
 	{
-		if (flag)
+		if (prePaivalue == paiValue) continue;
+		prePaivalue = paiValue;
+		if (getPaiValue(paiValue) == 2)      //二七十
 		{
-			string key = "";
-			for (int i = 1; i < nCombiLen + 1; i++)
+			if (pai_count[paiValue] == 2 && pai_count[paiValue + 5] == 2 && pai_count[paiValue + 8] == 2)
 			{
-				nSumCount[i - 1] = pSum[nSumIndex[i]];
-				key += to_string(pSum[nSumIndex[i]]);
+				retComs.emplace_back(vector<int>{ paiValue, paiValue + 5, paiValue + 8});
 			}
 
-			if (call_back(nSumCount))
+			if (pai_count[paiValue + 5] >= 1 && pai_count[paiValue + 8] >= 1)
 			{
-				if (!key_value.count(key))
-				{
-					key_value[key] = 1;
-					res.emplace_back(nSumCount);
-				}
-				else if (key_value[key] == 1)
-				{
-					if (nSumCount[0] % 100 != nSumCount[1] % 100 && pai_count[nSumCount[0]] == 2 && pai_count[nSumCount[1]] == 2 && pai_count[nSumCount[2]] == 2)
-					{
-						key_value[key] = 2;
-						res.emplace_back(nSumCount);
-					}
-				}
+				retComs.emplace_back(vector<int>{ paiValue, paiValue + 5, paiValue + 8});
+			}
+		}
+
+		//顺子
+		if (pai_count[paiValue] == 2)
+		{
+			int type = getPaiType(paiValue);         //壹壹一
+			if (type == 1)
+			{
+				if (pai_count[paiValue + 100] > 0)
+					retComs.emplace_back(vector<int>{ paiValue, paiValue, paiValue + 100});
+			}
+			else
+			{
+				if (pai_count[paiValue - 100] > 0)
+					retComs.emplace_back(vector<int>{ paiValue, paiValue, paiValue - 100});
 			}
 
-			flag = false;
+			if (pai_count[paiValue + 1] == 2 && pai_count[paiValue + 2] == 2)
+			{
+				retComs.emplace_back(vector<int>{ paiValue, paiValue + 1, paiValue + 2});
+			}
 		}
 
-		nSumIndex[nPos]++;
-		if (nSumIndex[nPos] == nSumLen)
+		if (pai_count[paiValue + 1] >= 1 && pai_count[paiValue + 2] >= 1)
 		{
-			nSumIndex[nPos] = 0;
-			nPos--;
-			continue;
-		}
-
-		if (nPos < nCombiLen)
-		{
-			++nPos;
-			nSumIndex[nPos] = nSumIndex[nPos - 1];
-			continue;
-		}
-
-		if (nPos == nCombiLen)
-		{
-			flag = true;
+			retComs.emplace_back(vector<int>{ paiValue, paiValue + 1, paiValue + 2});
 		}
 	}
-	return res;
+	return retComs;
 }
 
 int combination2(const unordered_map<int, int>& pai_Count,const vector<vector<int>>& pSum, size_t nCombiLen, vector<vector<vector<int>>>& res)
@@ -349,18 +324,14 @@ vector<vector<int>> resolvexiaoQingPai(vector<int>& handpokers)
 			{
 				res.emplace_back(vector<int>());
 				delStartIndex = left - paiCount;
+				left -= paiCount;
 				tmpPaicount = paiCount;
-				for (; paiCount > 0; paiCount--, delStartIndex++)
+				for (; paiCount > 0; paiCount--)
 				{
-					swap(handpokers[delStartIndex], handpokers[right--]);
+					res.back().emplace_back(handpokers[delStartIndex]);
+					handpokers.erase(begin(handpokers) + delStartIndex);
+					right--;
 				}
-				while (tmpPaicount--)
-				{
-					res.back().emplace_back(handpokers.back());
-					handpokers.pop_back();
-				}
-				if (left > right)
-					break;
 			}
 			tempVal = handpokers[left];
 			paiCount = 1;
@@ -495,9 +466,10 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 	vector<vector<vector<int>>> res;
 	vector<vector<int>> vaildcombis;
 	vector<vector<int>> paiIndexList;
-	vaildcombis = combination(handpokers, 3, isVaildCombi);
-	vector<vector<vector<int>>> tempcombss;
-	/*cout << endl;
+	auto end = std::chrono::system_clock::now();
+
+	vaildcombis = getValidComByHandpokers(handpokers);
+	cout << vaildcombis.size() << endl;
 	for (const auto& com : vaildcombis)
 	{
 		for (const auto& pai : com)
@@ -505,7 +477,7 @@ vector<vector<vector<int>>> getAllCardCombi(const vector<int>& handpokers, const
 			cout << pai << " ";
 		}
 		cout << endl;
-	}*/
+	}
 
 	int tempComSize = comsize + kindNum + tempNum;
 
@@ -1561,13 +1533,14 @@ int getTingPai(vector<int> handPokers, map<int, int>& res_ting_hu,const int& hux
 
 void test()
 {
-	//vector<int> handPokers = getRandziPai(16);             //随机发牌
+	//vector<int> handPokers = getRandziPai(20);             //随机发牌
 	//printfvector(handPokers);
-	vector<int> handPokers = {102, 207, 107, 105, 201, 202,101, 102, 208, 201, 209, 210, 106, 207, 103, 109 };
-	handPokers.emplace_back(kindpai);
-	handPokers.emplace_back(kindpai);
-	handPokers.emplace_back(kindpai);
-	handPokers.emplace_back(kindpai);
+	vector<int> handPokers = { 208, 107, 209, 106, 208, 209, 201, 210, 105, 202, 205,
+		109, 104, 201, 202, 205, 210, 105, 204, 210 };
+	//handPokers.emplace_back(kindpai);
+	//handPokers.emplace_back(kindpai);
+	//handPokers.emplace_back(kindpai);
+	//handPokers.emplace_back(kindpai);
 	
 	map<int, int> res;
 	int huxi = 0;
@@ -1586,7 +1559,7 @@ void test()
 
 int main()         //算听啥
 {
-	srand((unsigned int)time(unsigned(NULL)));
+	srand(time(0));
 	while (getchar())
 	{
 		test();

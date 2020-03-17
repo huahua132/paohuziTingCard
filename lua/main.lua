@@ -49,39 +49,21 @@ end
 --local handpoker = {555,555,108,108,108,107,107,207,207,201}
 --local handpoker = {555,103,103,209,209,206,207,208,108,108,108}
 --local handpoker = {555,201,202,202,203,203,204,103,104,105,206,106,106,106,107,207,207,108,109,110}
-
-
 local handpoker = randFapai(20,4)
-local handpoker = {110,101,209,210,110,209,203,104,201,204,204,108,201,202,106,208,555,555,555,555}
-local ret_tingHu = {}
-print("handpokers:" .. table.concat(handpoker,','))
+--local handpoker = {201,205,109,108,203,204,208,207,107,110,106,102,101,201,108,103,555,555,555,555}
+
 local preTime = os.time()
+local ret_tingHu = {}
 ret_tingHu = TingpaiLogic.getTingPaiRes(handpoker)
 local nowTime = os.time()
-
---Debug(ret_tingHu)
- for tingpaiValue,item in pairs(ret_tingHu) do
-
-     local logStr = "cards:"
-     if type(item[TingpaiLogic.resIndex.combi]) == "table" then
-         for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
-             logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
-         end
-     end
-     print(logStr .. "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi])
- end
-
 print("user time :" .. nowTime - preTime)
 print("handpokers:" .. table.concat(handpoker,','))
---有错误的用例贴这
---handpokers:206,206,206,205,105,206,207,102,555,555,555
---handpokers:103,102,104,204,104,203,110,103,555,555,555
---handpokers:206,104,106,202,206,105,210,103,555,555,555
---handpokers:109,209,203,105,106,103,203,209,555,555,555
---handpokers:201,202,203,208,208,104,102,204,555,555,555
---handpokers:101,106,201,202,206,102,101,202,555,555,555
---handpokers:210,207,209,109,209,206,202,107,555,555,555 组合里面有空表 
---handpokers:202,108,108,204,105,106,108,207,555,555,555 组合里面有空表
---handpokers:202,102,104,109,209,204,106,104,555,555,555 组合里面有空表
---handpokers:101,110,110,101,210,203,209,209,555,555,555 组合里面有空表
---handpokers:102,109,104,108,107,206,204,108,555,555,555 组合里面有空表
+
+--Debug(ret_tingHu)
+for tingpaiValue,item in pairs(ret_tingHu) do
+    local logStr = "cards:"
+    for i, paicom in ipairs(item[TingpaiLogic.resIndex.combi]) do
+        logStr = logStr .. '[' .. table.concat(paicom,',') .. '] '
+    end
+    print(logStr .. "ting:" .. tingpaiValue .. " huxi:" .. item[TingpaiLogic.resIndex.huxi])
+end
