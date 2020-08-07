@@ -28,7 +28,7 @@ g_phzHuxi.s_wei = 3
 g_phzHuxi.b_wei = 6
 --tihuFunc 用与牌桌 碰 喂 提胡听牌
 --tihuFuncParame3   tihuFunc需要用的参数
-function TingpaiLogic.getTingPaiRes(_handPokers,tihuFunc,tihuFunc,tihuFuncParame3)
+function TingpaiLogic.getTingPaiRes(_handPokers,tihuFunc,tihuFuncParame3)
     local res_ting_hu = {}
     local res = TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,0,{})
     if res.isCantihu == true then
@@ -118,11 +118,11 @@ function TingpaiLogic.getTingPaiList(_handPokers,res_ting_hu,huxi,headcombi) --h
                 local tempisCanTing = TingpaiLogic.getchuTingPairByOne(combi[#combi], res_ting_hu, tempHufen,tempNewHeadCombi)
                 res.isCanTing = res.isCanTing or tempisCanTing
             else
-                local Logstr = "#combisCount:" .. #combi[#combi] .. "  "
-                for i,v in ipairs(combi[#combi]) do
-                    Logstr = Logstr .. v .. " "
-                end
-                print(Logstr)
+                -- local Logstr = "#combisCount:" .. #combi[#combi] .. "  "
+                -- for i,v in ipairs(combi[#combi]) do
+                --     Logstr = Logstr .. v .. " "
+                -- end
+                -- print(Logstr)
             end
         end
 
